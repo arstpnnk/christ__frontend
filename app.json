@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Christian Helper",
+    "slug": "christ",
+    "version": "1.0.0",
+    "sdkVersion": "48.0.0",
+    "platforms": ["ios", "android"],
+    "build": {
+      "development": {
+        "developmentClient": true,
+        "distribution": "internal"
+      },
+      "preview": {
+        "distribution": "internal"
+      },
+      "production": {
+        "autoIncrement": true
+      }
+    },
+    "ios-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "assetBundlePatterns": ["**/*"],
+    "extra": {
+      "eas": {
+        "projectId": "586fd55a-a3f8-411d-872a-e710fc0790df"
+      }
+    },
+    "owner": "johnmalkovich2017"
+  }
+}
