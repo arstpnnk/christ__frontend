@@ -1,7 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
-import * as api from '../utils/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import * as api from "../utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface ChatMessage {
   id: number;
@@ -14,11 +23,11 @@ interface ChatMessage {
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
 
   const fetchMessages = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem("token");
       if (token) {
         const fetchedMessages = await api.getChatMessages(token);
         setMessages(fetchedMessages);
@@ -39,15 +48,15 @@ export default function ChatScreen() {
       return;
     }
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem("token");
       if (token) {
         await api.sendChatMessage(token, content);
-        setContent('');
+        setContent("");
         fetchMessages(); // Refresh messages after sending a new one
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Ошибка', 'Не удалось отправить сообщение.');
+      Alert.alert("Ошибка", "Не удалось отправить сообщение.");
     }
   };
 
@@ -99,9 +108,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
     marginBottom: 20,
     marginTop: 40,
   },
@@ -109,44 +118,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messageContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
   },
   messageSender: {
-    fontWeight: 'bold',
-    color: '#f39c12',
+    fontWeight: "bold",
+    color: "#f39c12",
   },
   messageContent: {
     fontSize: 16,
-    color: '#fff',
+    color: "#fff",
     marginTop: 4,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
+    borderTopColor: "rgba(255,255,255,0.2)",
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    color: '#fff',
+    backgroundColor: "rgba(0,0,0,0.3)",
+    color: "#fff",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 20,
     marginRight: 10,
   },
   button: {
-    backgroundColor: '#f39c12',
+    backgroundColor: "#f39c12",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

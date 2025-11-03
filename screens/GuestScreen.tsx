@@ -1,24 +1,172 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  ImageBackground,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import MapView, { Marker, UrlTile } from "react-native-maps";
+import Icon from "react-native-vector-icons/Ionicons";
+import * as Location from "expo-location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Guest'>;
+const defaultChurches = [
+  { id: 1, title: "Церковь Благодать", lat: 53.905, lon: 27.561 },
+  { id: 2, title: "Храм Всех Святых", lat: 53.932, lon: 27.578 },
+];
 
-export default function GuestScreen({ navigation }: Props) {
+// A default location for the map to show immediately.
+const defaultLocation = {
+  coords: {
+    latitude: 53.9045,
+    longitude: 27.5615,
+  },
+};
+
+export default function GuestScreen() {
+  const [churches, setChurches] = useState(defaultChurches);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // The map will now use this location state, which is set by default.
+  const [location, setLocation] = useState<any>(defaultLocation);
+
+  // This effect now only checks for the login token.
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    };
+    checkLoginStatus();
+  }, []);
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("token");
+    setIsLoggedIn(false);
+    Alert.alert("Выход", "Вы успешно вышли из системы.");
+  };
+
   return (
-    <View style={styles.center}>
-      <Text style={styles.title}>Добро пожаловать, гость!</Text>
-      <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.btn}>
-        <Text style={styles.btnText}>Вернуться</Text>
-      </TouchableOpacity>
-    </View>
+    <ImageBackground
+      source={require("../assets/bg.jpg")}
+      blurRadius={2}
+      style={styles.background}
+    >
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleLogout}>
+            <Icon name="person-circle-outline" size={28} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {isLoggedIn ? "Вы вошли в систему" : "Вы вошли как гость"}
+          </Text>
+          <Icon name="notifications-outline" size={26} color="#fff" />
+        </View>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.quotes}
+          >
+            <View style={styles.quoteCard}>
+              <Text style={styles.quoteText}>
+                «Любовь к ближнему начинается с любви к Богу»{"\n"}(Серафим
+                Саровский)
+              </Text>
+            </View>
+            <View style={styles.quoteCard}>
+              <Text style={styles.quoteText}>
+                «Улыбнитесь — и вы подарите частичку радости окружающим»
+              </Text>
+            </View>
+          </ScrollView>
+
+          <View style={styles.banner}>
+            <Image
+              source={require("../assets/chrome.jpg")}
+              style={styles.bannerImage}
+            />
+            <Text style={styles.bannerText}>С Рождеством Христовым!</Text>
+          </View>
+
+          <View style={styles.mapCard}>
+            <Text style={styles.mapTitle}>
+              Карта местоположений религиозных организаций
+            </Text>
+            <MapView
+              style={styles.map}
+              initialRegion={{
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+              }}
+            >
+              <UrlTile
+                urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maximumZ={19}
+              />
+              {churches.map((ch) => (
+                <Marker
+                  key={ch.id}
+                  coordinate={{ latitude: ch.lat, longitude: ch.lon }}
+                  title={ch.title}
+                />
+              ))}
+            </MapView>
+          </View>
+        </ScrollView>
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex:1, alignItems:'center', justifyContent:'center', backgroundColor:'#fff' },
-  title: { fontSize:20, marginBottom:16 },
-  btn: { padding:12, backgroundColor:'#333', borderRadius:8 },
-  btnText: { color:'#fff', fontWeight:'700' }
+  background: { flex: 1, resizeMode: "cover", justifyContent: "center" },
+  container: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+  },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "600" },
+  quotes: { padding: 10 },
+  quoteCard: {
+    backgroundColor: "#2e2e2e",
+    borderRadius: 10,
+    padding: 10,
+    marginRight: 10,
+    width: 250,
+  },
+  quoteText: { color: "#fff", fontSize: 13 },
+  banner: {
+    margin: 10,
+    borderRadius: 10,
+    overflow: "hidden",
+    position: "relative",
+  },
+  bannerImage: { width: "100%", height: 160 },
+  bannerText: {
+    position: "absolute",
+    bottom: 10,
+    left: 10,
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  mapCard: {
+    margin: 10,
+    backgroundColor: "#2e2e2e",
+    borderRadius: 12,
+    padding: 10,
+  },
+  mapTitle: { color: "#fff", marginBottom: 6 },
+  map: { width: "100%", height: 200, borderRadius: 10 },
 });
