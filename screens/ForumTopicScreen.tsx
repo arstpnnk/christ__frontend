@@ -13,6 +13,8 @@ interface ChatMessage {
   content: string;
   sender: { name: string };
   createdAt: string;
+  likes: number;
+  dislikes: number;
 }
 
 export default function ForumTopicScreen() {
@@ -23,20 +25,23 @@ export default function ForumTopicScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [token, setToken] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const getToken = async () => {
+    const getData = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
+      const user = await AsyncStorage.getItem('user');
+      if (user) {
+        setCurrentUser(JSON.parse(user));
+      }
     };
-    getToken();
+    getData();
   }, []);
 
   const fetchMessages = useCallback(async () => {
     if (!token) return;
     try {
-      // Assuming there's an API endpoint to get messages for a specific forum post
-      // This is a placeholder, you'll need to implement this in your backend and api.ts
       const fetchedMessages: ChatMessage[] = await api.getForumPostMessages(token, postId);
       setMessages(fetchedMessages);
     } catch (error) {
@@ -56,8 +61,6 @@ export default function ForumTopicScreen() {
       return;
     }
     try {
-      // Assuming there's an API endpoint to send a message to a specific forum post
-      // This is a placeholder, you'll need to implement this in your backend and api.ts
       await api.sendForumPostMessage(token, postId, newMessage);
       setNewMessage('');
       fetchMessages(); // Refresh messages after sending
@@ -67,11 +70,43 @@ export default function ForumTopicScreen() {
     }
   };
 
+  const handleLike = async (messageId: number) => {
+    if (!token) return;
+    try {
+      await api.likeForumPostMessage(token, postId, messageId);
+      fetchMessages();
+    } catch (error) {
+      console.error("Failed to like message:", error);
+      Alert.alert('Ошибка', 'Не удалось поставить лайк.');
+    }
+  };
+
+  const handleDislike = async (messageId: number) => {
+    if (!token) return;
+    try {
+      await api.dislikeForumPostMessage(token, postId, messageId);
+      fetchMessages();
+    } catch (error) {
+      console.error("Failed to dislike message:", error);
+      Alert.alert('Ошибка', 'Не удалось поставить дизлайк.');
+    }
+  };
+
   const renderMessage = ({ item }: { item: ChatMessage }) => (
-    <View style={[styles.messageContainer, item.sender.name === 'CurrentUserName' ? styles.myMessage : styles.otherMessage]}>
+    <View style={[styles.messageContainer, item.sender.name === currentUser?.name ? styles.myMessage : styles.otherMessage]}>
       <Text style={styles.messageAuthor}>{item.sender.name}</Text>
       <Text style={styles.messageContent}>{item.content}</Text>
       <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
+      <View style={styles.postActions}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item.id)}>
+          <Ionicons name="thumbs-up-outline" size={20} color="#ccc" />
+          <Text style={styles.actionText}>{item.likes}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleDislike(item.id)}>
+          <Ionicons name="thumbs-down-outline" size={20} color="#ccc" />
+          <Text style={styles.actionText}>{item.dislikes}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -202,5 +237,18 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  postActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionText: {
+    color: '#ccc',
+    marginLeft: 4,
   },
 });

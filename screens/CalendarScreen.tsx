@@ -1,3 +1,24 @@
+// import React, { useState, useEffect } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   TouchableOpacity,
+//   TextInput,
+//   ScrollView,
+//   LayoutAnimation,
+//   Platform,
+//   UIManager,
+//   Image,
+// } from "react-native";
+// import { Calendar } from "react-native-calendars";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import Icon from "react-native-vector-icons/Ionicons";
+
+// if (Platform.OS === "android") {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -14,27 +35,45 @@ import {
 import { Calendar } from "react-native-calendars";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/Ionicons";
+import * as api from "../utils/api";
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
 
 if (Platform.OS === "android") {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export default function CalendarScreen() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [selectedDate, setSelectedDate] = useState(null);
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState({});
   const [markedDates, setMarkedDates] = useState({});
   const [openNote, setOpenNote] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [holidays, setHolidays] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
-    (async () => {
-      const saved = await AsyncStorage.getItem("calendarNotes");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setNotes(parsed);
-        updateMarkedDates(parsed);
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem("token");
+      setIsLoggedIn(!!token);
+      if (token) {
+        const user = await AsyncStorage.getItem("user");
+        const saved = await AsyncStorage.getItem(`calendarNotes_${user.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setNotes(parsed);
+          updateMarkedDates(parsed);
+        }
+        const fetchedHolidays = await api.getHolidays(token);
+        setHolidays(fetchedHolidays);
+        const notifications = await api.getNotifications(token);
+        const unread = notifications.filter((n: any) => !n.read).length;
+        setUnreadNotifications(unread);
       }
-    })();
+    };
+    checkLoginStatus();
   }, []);
 
   const updateMarkedDates = (notesData, selected = selectedDate) => {
@@ -59,22 +98,20 @@ export default function CalendarScreen() {
 
   const saveNote = async () => {
     if (!selectedDate) return;
+    const token = await AsyncStorage.getItem("token");
+    const user = await AsyncStorage.getItem("user");
     const updated = { ...notes, [selectedDate]: note };
     setNotes(updated);
-    await AsyncStorage.setItem("calendarNotes", JSON.stringify(updated));
+    await AsyncStorage.setItem(`calendarNotes_${user.id}`, JSON.stringify(updated));
+    if (token) {
+      await api.createNote(token, note);
+    }
     updateMarkedDates(updated);
     setNote("");
     setOpenNote(false);
   };
 
-  const holiday =
-    selectedDate === "2024-09-08"
-      ? {
-          title: "Рождество Пресвятой Богородицы",
-          description:
-            "Праздник знаменует начало церковного года и подчёркивает особое почитание Девы Марии.",
-        }
-      : null;
+  const holiday = holidays.find((h) => h.date === selectedDate);
 
   const toggleNote = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -86,7 +123,14 @@ export default function CalendarScreen() {
       <View style={styles.header}>
         <Icon name="person-circle-outline" size={28} color="#fff" />
         <Text style={styles.headerTitle}>Христианский помощник</Text>
-        <Icon name="notifications-outline" size={26} color="#fff" />
+        <TouchableOpacity onPress={() => navigation.navigate('Notification')}>
+            <Icon name="notifications-outline" size={26} color="#fff" />
+            {unreadNotifications > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationText}>{unreadNotifications}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
@@ -110,7 +154,7 @@ export default function CalendarScreen() {
               arrowColor: "#fff",
             }}
           />
-          {notes[selectedDate] && (
+          {isLoggedIn && notes[selectedDate] && (
             <Text style={styles.savedNote}>{notes[selectedDate]}</Text>
           )}
           {holiday && (
@@ -119,7 +163,7 @@ export default function CalendarScreen() {
               <Text style={styles.eventDescription}>{holiday.description}</Text>
             </View>
           )}
-          {selectedDate && !openNote && (
+          {isLoggedIn && selectedDate && !openNote && (
             <View style={styles.noteSection}>
               <TouchableOpacity
                 style={styles.addNoteButton}
@@ -134,7 +178,7 @@ export default function CalendarScreen() {
           )}
         </View>
 
-        {selectedDate && openNote && (
+        {isLoggedIn && selectedDate && openNote && (
           <View style={styles.noteContainer}>
             <TextInput
               style={styles.input}
@@ -238,5 +282,21 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     marginTop: 5,
     fontStyle: "italic",
+  },
+  notificationBadge: {
+    position: 'absolute',
+    right: -6,
+    top: -3,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });

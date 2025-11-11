@@ -1,5 +1,4 @@
-export const API_BASE = "http://10.0.2.2:8080"; // на Android-эмуляторе; для Expo на ПК/ios - localhost 
-
+export const API_BASE = "http://10.0.2.2:8080"; // на Android-эмуляторе; для Expo на ПК/ios - localhost
 
 type LoginReq = { email: string; password: string };
 type RegisterReq = {
@@ -53,7 +52,11 @@ export async function getForumPosts(token: string) {
   });
 }
 
-export async function createForumPost(token: string, title: string, content: string) {
+export async function createForumPost(
+  token: string,
+  title: string,
+  content: string
+) {
   return request("/forum", {
     method: "POST",
     headers: {
@@ -70,7 +73,11 @@ export async function getForumPostMessages(token: string, postId: number) {
   });
 }
 
-export async function sendForumPostMessage(token: string, postId: number, content: string) {
+export async function sendForumPostMessage(
+  token: string,
+  postId: number,
+  content: string
+) {
   return request(`/forum/${postId}/messages`, {
     method: "POST",
     headers: {
@@ -88,7 +95,11 @@ export async function getPriestQuestions(token: string) {
   });
 }
 
-export async function createPriestQuestion(token: string, title: string, question: string) {
+export async function createPriestQuestion(
+  token: string,
+  title: string,
+  question: string
+) {
   return request("/priest-questions", {
     method: "POST",
     headers: {
@@ -99,13 +110,20 @@ export async function createPriestQuestion(token: string, title: string, questio
   });
 }
 
-export async function getPriestQuestionReplies(token: string, questionId: number) {
+export async function getPriestQuestionReplies(
+  token: string,
+  questionId: number
+) {
   return request(`/priest-questions/${questionId}/replies`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
 
-export async function sendPriestQuestionReply(token: string, questionId: number, content: string) {
+export async function sendPriestQuestionReply(
+  token: string,
+  questionId: number,
+  content: string
+) {
   return request(`/priest-questions/${questionId}/replies`, {
     method: "POST",
     headers: {
@@ -134,15 +152,102 @@ export async function sendChatMessage(token: string, content: string) {
   });
 }
 
-export async function uploadFile(token: string, file: any) {
-    const formData = new FormData();
-    formData.append('file', file);
+export async function getUserProfile(token: string) {
+  return request("/users/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
 
-    return fetch(API_BASE + "/files/upload", {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-    });
+export async function likeForumPost(token: string, postId: number) {
+  return request(`/forum/${postId}/like`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function dislikeForumPost(token: string, postId: number) {
+  return request(`/forum/${postId}/dislike`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function likeForumPostMessage(
+  token: string,
+  postId: number,
+  messageId: number
+) {
+  return request(`/forum/${postId}/messages/${messageId}/like`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function dislikeForumPostMessage(
+  token: string,
+  postId: number,
+  messageId: number
+) {
+  return request(`/forum/${postId}/messages/${messageId}/dislike`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getNotifications(token: string) {
+  return request("/notifications", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getUnreadNotifications(token: string) {
+  return request("/notifications/unread", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function markNotificationAsRead(
+  token: string,
+  notificationId: number
+) {
+  return request(`/notifications/${notificationId}/read`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getNotes(token: string) {
+  return request("/notes", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createNote(token: string, content: string) {
+  return request("/notes", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function getHolidays(token: string) {
+  return request("/holidays", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function uploadFile(token: string, file: any) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return fetch(API_BASE + "/files/upload", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
 }

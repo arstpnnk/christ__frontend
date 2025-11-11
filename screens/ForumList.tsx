@@ -12,6 +12,8 @@ interface ForumPost {
   content: string;
   author: { name: string };
   createdAt: string;
+  likes: number;
+  dislikes: number;
 }
 
 const FAVORITES_KEY = 'forum_favorites';
@@ -76,6 +78,32 @@ export default function ForumList() {
     }
   };
 
+  const handleLike = async (postId: number) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        await api.likeForumPost(token, postId);
+        fetchPosts();
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Ошибка', 'Не удалось поставить лайк.');
+    }
+  };
+
+  const handleDislike = async (postId: number) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        await api.dislikeForumPost(token, postId);
+        fetchPosts();
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Ошибка', 'Не удалось поставить дизлайк.');
+    }
+  };
+
   const renderItem = ({ item }: { item: ForumPost }) => (
     <TouchableOpacity 
       style={styles.postContainer} 
@@ -93,6 +121,16 @@ export default function ForumList() {
       </View>
       <Text style={styles.postContent} numberOfLines={2}>{item.content}</Text>
       <Text style={styles.postAuthor}>Автор: {item.author.name}</Text>
+      <View style={styles.postActions}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item.id)}>
+          <Ionicons name="thumbs-up-outline" size={20} color="#ccc" />
+          <Text style={styles.actionText}>{item.likes}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleDislike(item.id)}>
+          <Ionicons name="thumbs-down-outline" size={20} color="#ccc" />
+          <Text style={styles.actionText}>{item.dislikes}</Text>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 
@@ -219,5 +257,18 @@ const styles = StyleSheet.create({
     color: '#ccc',
     marginTop: 12,
     fontStyle: 'italic',
+  },
+  postActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionText: {
+    color: '#ccc',
+    marginLeft: 4,
   },
 });

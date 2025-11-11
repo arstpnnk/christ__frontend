@@ -1,4 +1,31 @@
 import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   ScrollView,
+//   Image,
+//   ImageBackground,
+//   TouchableOpacity,
+//   Alert,
+// } from "react-native";
+// import MapView, { Marker, UrlTile } from "react-native-maps";
+// import Icon from "react-native-vector-icons/Ionicons";
+// import * as Location from "expo-location";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// const defaultChurches = [
+//   { id: 1, title: "Церковь Благодать", lat: 53.905, lon: 27.561 },
+//   { id: 2, title: "Храм Всех Святых", lat: 53.932, lon: 27.578 },
+// ];
+
+// // A default location for the map to show immediately.
+// const defaultLocation = {
+//   coords: {
+//     latitude: 53.9045,
+//     longitude: 27.5615,
+//   },
+// };
 import {
   View,
   Text,
@@ -13,6 +40,9 @@ import MapView, { Marker, UrlTile } from "react-native-maps";
 import Icon from "react-native-vector-icons/Ionicons";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
+import * as api from '../utils/api';
 
 const defaultChurches = [
   { id: 1, title: "Церковь Благодать", lat: 53.905, lon: 27.561 },
@@ -28,16 +58,21 @@ const defaultLocation = {
 };
 
 export default function GuestScreen() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [churches, setChurches] = useState(defaultChurches);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // The map will now use this location state, which is set by default.
   const [location, setLocation] = useState<any>(defaultLocation);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // This effect now only checks for the login token.
   useEffect(() => {
     const checkLoginStatus = async () => {
       const token = await AsyncStorage.getItem("token");
       setIsLoggedIn(!!token);
+      if (token) {
+        const notifications = await api.getNotifications(token);
+        const unread = notifications.filter((n: any) => !n.read).length;
+        setUnreadNotifications(unread);
+      }
     };
     checkLoginStatus();
   }, []);
@@ -62,7 +97,14 @@ export default function GuestScreen() {
           <Text style={styles.headerTitle}>
             {isLoggedIn ? "Вы вошли в систему" : "Вы вошли как гость"}
           </Text>
-          <Icon name="notifications-outline" size={26} color="#fff" />
+          <TouchableOpacity onPress={() => navigation.navigate('Notification')}>
+            <Icon name="notifications-outline" size={26} color="#fff" />
+            {unreadNotifications > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationText}>{unreadNotifications}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
@@ -169,4 +211,20 @@ const styles = StyleSheet.create({
   },
   mapTitle: { color: "#fff", marginBottom: 6 },
   map: { width: "100%", height: 200, borderRadius: 10 },
+  notificationBadge: {
+    position: 'absolute',
+    right: -6,
+    top: -3,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
 });

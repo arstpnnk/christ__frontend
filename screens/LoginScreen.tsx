@@ -22,6 +22,11 @@ export default function LoginScreen({ navigation }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const extractTokenFromUrl = (url: string): string | null => {
+    const match = url.match(/token=([^&]+)/);
+    return match ? match[1] : null;
+  };
+
   useEffect(() => {
     const handleInitialUrl = async () => {
       const initial = await Linking.getInitialURL();
@@ -29,6 +34,8 @@ export default function LoginScreen({ navigation }: Props) {
         const token = extractTokenFromUrl(initial);
         if (token) {
           await AsyncStorage.setItem("token", token);
+          const user = await api.getUserProfile(token);
+          await AsyncStorage.setItem("user", JSON.stringify(user));
           navigation.replace("MainTabs");
         }
       }
@@ -39,6 +46,8 @@ export default function LoginScreen({ navigation }: Props) {
       const token = extractTokenFromUrl(url);
       if (token) {
         await AsyncStorage.setItem("token", token);
+        const user = await api.getUserProfile(token);
+        await AsyncStorage.setItem("user", JSON.stringify(user));
         navigation.replace("MainTabs");
       }
     });
@@ -69,21 +78,6 @@ export default function LoginScreen({ navigation }: Props) {
       await Linking.openURL(authUrl);
     } catch (err) {
       alert("Не удалось открыть браузер для авторизации");
-    }
-  };
-
-  const extractTokenFromUrl = (url: string): string | null => {
-    try {
-      const u = url.toString();
-
-      const qMatch = u.match(/[?&]token=([^&]+)/);
-      if (qMatch && qMatch[1]) return decodeURIComponent(qMatch[1]);
-
-      const hMatch = u.match(/[#&]token=([^&]+)/);
-      if (hMatch && hMatch[1]) return decodeURIComponent(hMatch[1]);
-      return null;
-    } catch {
-      return null;
     }
   };
 
