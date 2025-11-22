@@ -4,7 +4,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import * as api from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface ForumPost {
   id: number;
@@ -18,8 +18,11 @@ interface ForumPost {
 
 const FAVORITES_KEY = 'forum_favorites';
 
-export default function ForumList() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+interface ForumListProps {
+  navigation: NavigationProp<RootStackParamList>;
+}
+
+export default function ForumList({ navigation }: ForumListProps) {
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

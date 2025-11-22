@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, NavigationProp, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as api from '../utils/api';
 import { RootStackParamList } from '../App';
 
@@ -19,7 +19,7 @@ interface ChatMessage {
 
 export default function ForumTopicScreen() {
   const route = useRoute<ForumTopicScreenRouteProp>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { postId, postTitle } = route.params;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -31,9 +31,9 @@ export default function ForumTopicScreen() {
     const getData = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
-      const user = await AsyncStorage.getItem('user');
-      if (user) {
-        setCurrentUser(JSON.parse(user));
+      const userString = await AsyncStorage.getItem('user');
+      if (userString) {
+        setCurrentUser(JSON.parse(userString));
       }
     };
     getData();
@@ -43,7 +43,9 @@ export default function ForumTopicScreen() {
     if (!token) return;
     try {
       const fetchedMessages: ChatMessage[] = await api.getForumPostMessages(token, postId);
-      setMessages(fetchedMessages);
+      if (Array.isArray(fetchedMessages)) {
+        setMessages(fetchedMessages);
+      }
     } catch (error) {
       console.error("Failed to fetch messages:", error);
       Alert.alert('Ошибка', 'Не удалось загрузить сообщения.');

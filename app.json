@@ -1,34 +1,49 @@
 {
   "expo": {
-    "name": "Christian Helper",
-    "slug": "christ",
+    "name": "my-app",
+    "slug": "my-app",
     "version": "1.0.0",
-    "sdkVersion": "48.0.0",
-    "platforms": ["ios", "android"],
-    "build": {
-      "development": {
-        "developmentClient": true,
-        "distribution": "internal"
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "entryPoint" : "./index.ts",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "preview": {
-        "distribution": "internal"
-      },
-      "production": {
-        "autoIncrement": true
-      }
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
     },
-    "ios-simulator": {
-      "extends": "development",
-      "ios": {
-        "simulator": true
-      }
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
     },
-    "assetBundlePatterns": ["**/*"],
-    "extra": {
-      "eas": {
-        "projectId": "586fd55a-a3f8-411d-872a-e710fc0790df"
-      }
-    },
-    "owner": "johnmalkovich2017"
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
   }
 }

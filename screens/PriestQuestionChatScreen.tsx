@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as api from '../utils/api';
 import { RootStackParamList } from '../App';
 
@@ -17,7 +17,7 @@ interface PriestQuestionReply {
 
 export default function PriestQuestionChatScreen() {
   const route = useRoute<PriestQuestionChatScreenRouteProp>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { questionId, questionTitle } = route.params;
 
   const [messages, setMessages] = useState<PriestQuestionReply[]>([]);
@@ -29,10 +29,11 @@ export default function PriestQuestionChatScreen() {
     const loadUserData = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
-      // In a real app, you'd fetch the current user's name from an API using the token
-      // For now, we'll use a placeholder or try to get it from stored user info
-      const storedUserName = await AsyncStorage.getItem('userName'); // Assuming you store user name on login
-      setCurrentUserName(storedUserName);
+      const userString = await AsyncStorage.getItem('user');
+      if (userString) {
+        const user = JSON.parse(userString);
+        setCurrentUserName(user.name); 
+      }
     };
     loadUserData();
   }, []);
@@ -40,10 +41,10 @@ export default function PriestQuestionChatScreen() {
   const fetchMessages = useCallback(async () => {
     if (!token) return;
     try {
-      // Assuming an API endpoint to get replies for a specific priest question
-      // You'll need to implement this in your backend and api.ts
       const fetchedMessages: PriestQuestionReply[] = await api.getPriestQuestionReplies(token, questionId);
-      setMessages(fetchedMessages);
+      if (Array.isArray(fetchedMessages)) {
+        setMessages(fetchedMessages);
+      }
     } catch (error) {
       console.error("Failed to fetch priest question replies:", error);
       Alert.alert('Ошибка', 'Не удалось загрузить ответы.');
@@ -61,8 +62,6 @@ export default function PriestQuestionChatScreen() {
       return;
     }
     try {
-      // Assuming an API endpoint to send a reply to a specific priest question
-      // You'll need to implement this in your backend and api.ts
       await api.sendPriestQuestionReply(token, questionId, newMessage);
       setNewMessage('');
       fetchMessages(); // Refresh messages after sending

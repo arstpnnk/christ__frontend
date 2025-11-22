@@ -7,13 +7,14 @@ import {
   StyleSheet,
   Image,
   Platform,
+  Alert,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as api from "../utils/api";
 import * as DocumentPicker from "expo-document-picker";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FileUpload">;
 
@@ -33,8 +34,6 @@ export default function FileUploadScreen({ route, navigation }: Props) {
       if (token) {
         await AsyncStorage.setItem("token", token);
         if (file) {
-          // On web, DocumentPicker provides a File object that can be used directly.
-          // On native, we need to construct the object for FormData.
           const fileData: any = Platform.OS === 'web' ? file.file : {
             uri: file.uri,
             name: file.name,
@@ -44,10 +43,10 @@ export default function FileUploadScreen({ route, navigation }: Props) {
         }
         navigation.replace("MainTabs");
       } else {
-        alert("Не удалось зарегистрироваться");
+        Alert.alert("Ошибка", "Не удалось зарегистрироваться");
       }
     } catch (e: any) {
-      alert(e.message || "Ошибка при регистрации");
+      Alert.alert("Ошибка", e.message || "Ошибка при регистрации");
     }
   };
 
@@ -57,8 +56,8 @@ export default function FileUploadScreen({ route, navigation }: Props) {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setFile(result.assets[0]);
       }
-    } catch (e) {
-      console.log(e);
+    } catch (e: any) {
+      Alert.alert("Ошибка", e.message || "Не удалось выбрать файл.");
     }
   };
 

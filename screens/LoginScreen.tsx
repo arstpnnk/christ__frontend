@@ -10,6 +10,7 @@ import {
   Dimensions,
   Linking,
   Platform,
+  Alert,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
@@ -34,6 +35,7 @@ export default function LoginScreen({ navigation }: Props) {
         const token = extractTokenFromUrl(initial);
         if (token) {
           await AsyncStorage.setItem("token", token);
+          // Assuming getUserProfile is implemented in api.ts and returns user data
           const user = await api.getUserProfile(token);
           await AsyncStorage.setItem("user", JSON.stringify(user));
           navigation.replace("MainTabs");
@@ -59,12 +61,15 @@ export default function LoginScreen({ navigation }: Props) {
       const token = await api.loginUser({ email: username, password });
       if (token) {
         await AsyncStorage.setItem("token", token);
+        // Fetch user profile after successful login
+        const user = await api.getUserProfile(token);
+        await AsyncStorage.setItem("user", JSON.stringify(user));
         navigation.replace("MainTabs");
       } else {
-        alert("Неправильные учётные данные");
+        Alert.alert("Ошибка", "Неправильные учётные данные");
       }
     } catch (e: any) {
-      alert(e.message || "Ошибка при входе");
+      Alert.alert("Ошибка", e.message || "Ошибка при входе");
     }
   };
 
@@ -77,7 +82,7 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       await Linking.openURL(authUrl);
     } catch (err) {
-      alert("Не удалось открыть браузер для авторизации");
+      Alert.alert("Ошибка", "Не удалось открыть браузер для авторизации");
     }
   };
 

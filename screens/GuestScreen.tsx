@@ -1,31 +1,4 @@
 import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   ScrollView,
-//   Image,
-//   ImageBackground,
-//   TouchableOpacity,
-//   Alert,
-// } from "react-native";
-// import MapView, { Marker, UrlTile } from "react-native-maps";
-// import Icon from "react-native-vector-icons/Ionicons";
-// import * as Location from "expo-location";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// const defaultChurches = [
-//   { id: 1, title: "Церковь Благодать", lat: 53.905, lon: 27.561 },
-//   { id: 2, title: "Храм Всех Святых", lat: 53.932, lon: 27.578 },
-// ];
-
-// // A default location for the map to show immediately.
-// const defaultLocation = {
-//   coords: {
-//     latitude: 53.9045,
-//     longitude: 27.5615,
-//   },
-// };
 import {
   View,
   Text,
@@ -35,9 +8,10 @@ import {
   ImageBackground,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import MapView, { Marker, UrlTile } from "react-native-maps";
-import Icon from "react-native-vector-icons/Ionicons";
+import Icon from "@expo/vector-icons/Ionicons";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, NavigationProp } from '@react-navigation/native';
@@ -49,7 +23,6 @@ const defaultChurches = [
   { id: 2, title: "Храм Всех Святых", lat: 53.932, lon: 27.578 },
 ];
 
-// A default location for the map to show immediately.
 const defaultLocation = {
   coords: {
     latitude: 53.9045,
@@ -69,9 +42,16 @@ export default function GuestScreen() {
       const token = await AsyncStorage.getItem("token");
       setIsLoggedIn(!!token);
       if (token) {
-        const notifications = await api.getNotifications(token);
-        const unread = notifications.filter((n: any) => !n.read).length;
-        setUnreadNotifications(unread);
+        try {
+          const notifications = await api.getNotifications(token);
+          if (Array.isArray(notifications)) {
+            const unread = notifications.filter((n: any) => !n.read).length;
+            setUnreadNotifications(unread);
+          }
+        } catch (error) {
+          console.error("Failed to fetch notifications:", error);
+          // Handle error, e.g., set unreadNotifications to 0 or show an alert
+        }
       }
     };
     checkLoginStatus();
@@ -81,6 +61,7 @@ export default function GuestScreen() {
     await AsyncStorage.removeItem("token");
     setIsLoggedIn(false);
     Alert.alert("Выход", "Вы успешно вышли из системы.");
+    navigation.replace("Login"); // Navigate back to login after logout
   };
 
   return (

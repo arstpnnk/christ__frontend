@@ -7,10 +7,12 @@ import {
   ImageBackground,
   StyleSheet,
   Image,
+  Alert,
+  Linking,
+  Platform,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as api from "../utils/api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
@@ -22,12 +24,41 @@ export default function RegisterScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
 
   const onContinue = () => {
+    if (!email || !password || !username || !phone) {
+      Alert.alert("Ошибка", "Пожалуйста, заполните все поля.");
+      return;
+    }
+    if (password.length < 10) {
+      Alert.alert("Ошибка", "Пароль должен быть не менее 10 символов.");
+      return;
+    }
+    if (!/^[a-zA-Z]+$/.test(username)) {
+      Alert.alert("Ошибка", "Имя пользователя может содержать только буквы.");
+      return;
+    }
+    if (!email.includes('@')) {
+      Alert.alert("Ошибка", "Неверный формат электронной почты.");
+      return;
+    }
     navigation.navigate("FileUpload", {
       email,
       password,
       name: username,
       phone,
     });
+  };
+
+  const onGoogleLogin = async () => {
+    const backendHost =
+      Platform.OS === "android"
+        ? "http://10.0.2.2:8080"
+        : "http://localhost:8080";
+    const authUrl = `${backendHost}/oauth2/authorization/google`;
+    try {
+      await Linking.openURL(authUrl);
+    } catch (err) {
+      Alert.alert("Ошибка", "Не удалось открыть браузер для авторизации");
+    }
   };
 
   return (
@@ -84,7 +115,7 @@ export default function RegisterScreen({ navigation }: Props) {
           <Text style={styles.loginText}>Продолжить</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.googleButton}>
+        <TouchableOpacity style={styles.googleButton} onPress={onGoogleLogin}>
           <Image
             source={require("../assets/google.png")}
             style={styles.googleIcon}
@@ -154,6 +185,5 @@ const styles = StyleSheet.create({
   },
   googleIcon: { width: 20, height: 20, marginRight: 10 },
   googleText: { color: "#fff", fontSize: 15 },
-  smallText: { color: "#ccc", marginTop: 6 },
   link: { color: "#fff", textDecorationLine: "underline", marginTop: 4 },
 });

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
-import ForumList from './ForumList';
+import ForumList from './ForumList'; // Will be created next
 import PriestQuestionListScreen from './PriestQuestionListScreen';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { TabParamList } from '../App';
 
 type Tab = 'Forum' | 'PriestQuestionList';
+type Props = BottomTabScreenProps<TabParamList, 'Forum'>;
 
-export default function ForumScreen() {
+export default function ForumScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('Forum');
 
   return (
@@ -35,7 +38,7 @@ export default function ForumScreen() {
         </View>
 
         <View style={styles.content}>
-          {activeTab === 'Forum' ? <ForumList /> : <PriestQuestionListScreen />}
+          {activeTab === 'Forum' ? <ForumList navigation={navigation} /> : <PriestQuestionListScreen />}
         </View>
       </View>
     </ImageBackground>

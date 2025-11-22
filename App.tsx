@@ -1,14 +1,15 @@
+import 'react-native-url-polyfill/auto'
 import "react-native-gesture-handler";
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import Ionicons from "@expo/vector-icons/Ionicons"; // Using @expo/vector-icons for better Expo compatibility
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, TouchableOpacity, Text } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, AppRegistry } from "react-native";
 import * as api from "./utils/api";
 
-// Экраны
+// Screens (placeholders for now)
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import FileUploadScreen from "./screens/FileUploadScreen";
@@ -19,7 +20,6 @@ import ForumScreen from "./screens/ForumScreen";
 import ForumTopicScreen from "./screens/ForumTopicScreen";
 import PriestQuestionListScreen from "./screens/PriestQuestionListScreen";
 import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
-// import NotesScreen from "./screens/NotesScreen";
 import NotificationScreen from "./screens/NotificationScreen";
 
 export type RootStackParamList = {
@@ -41,18 +41,16 @@ export type RootStackParamList = {
 export type TabParamList = {
   Guest: undefined;
   Calendar: undefined;
-  Chat: undefined;
   Forum: undefined;
+  Chat: undefined; // Re-adding Chat for now, will implement later
   // Notes: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-import { useFocusEffect } from "@react-navigation/native";
-
-// --- Вкладки внизу ---
-function MainTabs({ navigation }) {
+// --- Bottom Tabs --- //
+function MainTabs() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -84,11 +82,11 @@ function MainTabs({ navigation }) {
         tabBarActiveTintColor: "#C9E3AC",
         tabBarInactiveTintColor: "#ccc",
         tabBarIcon: ({ color, size }) => {
-          let iconName: string = "";
+          let iconName: keyof typeof Ionicons.glyphMap = "";
           if (route.name === "Guest") iconName = "home";
-          if (route.name === "Calendar") iconName = "calendar";
-          if (route.name === "Forum") iconName = "people";
-          // if (route.name === "Notes") iconName = "book";
+          else if (route.name === "Calendar") iconName = "calendar";
+          else if (route.name === "Forum") iconName = "people";
+          else if (route.name === "Chat") iconName = "chatbubbles";
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
@@ -98,7 +96,6 @@ function MainTabs({ navigation }) {
         component={GuestScreen}
         options={{ title: "Главная" }}
       />
-
       {isLoggedIn && (
         <>
           <Tab.Screen
@@ -111,11 +108,11 @@ function MainTabs({ navigation }) {
             component={CalendarScreen}
             options={{ title: "Календарь" }}
           />
-          {/* <Tab.Screen
-            name="Notes"
-            component={NotesScreen}
-            options={{ title: "Заметки" }}
-          /> */}
+          <Tab.Screen
+            name="Chat"
+            component={ChatScreen}
+            options={{ title: "Чат" }}
+          />
         </>
       )}
     </Tab.Navigator>
@@ -144,3 +141,5 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+AppRegistry.registerComponent("main", () => App)

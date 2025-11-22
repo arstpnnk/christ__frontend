@@ -4,7 +4,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import * as api from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface Notification {
   id: number;
@@ -24,7 +24,11 @@ export default function NotificationScreen() {
       const token = await AsyncStorage.getItem('token');
       if (token) {
         const fetchedNotifications: Notification[] = await api.getNotifications(token);
-        setNotifications(fetchedNotifications || []);
+        if (Array.isArray(fetchedNotifications)) {
+          setNotifications(fetchedNotifications);
+        } else {
+          setNotifications([]);
+        }
       }
     } catch (error) {
       console.error(error);

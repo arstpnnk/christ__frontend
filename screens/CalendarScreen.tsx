@@ -1,24 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   TouchableOpacity,
-//   TextInput,
-//   ScrollView,
-//   LayoutAnimation,
-//   Platform,
-//   UIManager,
-//   Image,
-// } from "react-native";
-// import { Calendar } from "react-native-calendars";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import Icon from "react-native-vector-icons/Ionicons";
-
-// if (Platform.OS === "android") {
-//   UIManager.setLayoutAnimationEnabledExperimental(true);
-// }
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -31,10 +10,11 @@ import {
   Platform,
   UIManager,
   Image,
+  Alert,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Icon from "react-native-vector-icons/Ionicons";
+import Icon from "@expo/vector-icons/Ionicons";
 import * as api from "../utils/api";
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
@@ -45,13 +25,13 @@ if (Platform.OS === "android") {
 
 export default function CalendarScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [notes, setNotes] = useState({});
-  const [markedDates, setMarkedDates] = useState({});
+  const [notes, setNotes] = useState<{ [key: string]: string }>({});
+  const [markedDates, setMarkedDates] = useState<{ [key: string]: any }>({});
   const [openNote, setOpenNote] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [holidays, setHolidays] = useState([]);
+  const [holidays, setHolidays] = useState<any[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
@@ -59,25 +39,38 @@ export default function CalendarScreen() {
       const token = await AsyncStorage.getItem("token");
       setIsLoggedIn(!!token);
       if (token) {
-        const user = await AsyncStorage.getItem("user");
-        const saved = await AsyncStorage.getItem(`calendarNotes_${user.id}`);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setNotes(parsed);
-          updateMarkedDates(parsed);
+        try {
+          const userString = await AsyncStorage.getItem("user");
+          const user = userString ? JSON.parse(userString) : null;
+
+          if (user && user.id) {
+            const savedNotes = await AsyncStorage.getItem(`calendarNotes_${user.id}`);
+            if (savedNotes) {
+              const parsed = JSON.parse(savedNotes);
+              setNotes(parsed);
+              updateMarkedDates(parsed);
+            }
+          }
+
+          const fetchedHolidays = await api.getHolidays(token);
+          setHolidays(fetchedHolidays);
+
+          const notifications = await api.getNotifications(token);
+          if (Array.isArray(notifications)) {
+            const unread = notifications.filter((n: any) => !n.read).length;
+            setUnreadNotifications(unread);
+          }
+        } catch (error) {
+          console.error("Failed to fetch calendar data:", error);
+          Alert.alert("Ошибка", "Не удалось загрузить данные календаря.");
         }
-        const fetchedHolidays = await api.getHolidays(token);
-        setHolidays(fetchedHolidays);
-        const notifications = await api.getNotifications(token);
-        const unread = notifications.filter((n: any) => !n.read).length;
-        setUnreadNotifications(unread);
       }
     };
     checkLoginStatus();
   }, []);
 
-  const updateMarkedDates = (notesData, selected = selectedDate) => {
-    const newMarks = {};
+  const updateMarkedDates = (notesData: { [key: string]: string }, selected: string | null = selectedDate) => {
+    const newMarks: { [key: string]: any } = {};
     Object.keys(notesData).forEach((date) => {
       newMarks[date] = {
         selected: true,
@@ -99,7 +92,14 @@ export default function CalendarScreen() {
   const saveNote = async () => {
     if (!selectedDate) return;
     const token = await AsyncStorage.getItem("token");
-    const user = await AsyncStorage.getItem("user");
+    const userString = await AsyncStorage.getItem("user");
+    const user = userString ? JSON.parse(userString) : null;
+
+    if (!user || !user.id) {
+      Alert.alert("Ошибка", "Пользователь не авторизован.");
+      return;
+    }
+
     const updated = { ...notes, [selectedDate]: note };
     setNotes(updated);
     await AsyncStorage.setItem(`calendarNotes_${user.id}`, JSON.stringify(updated));

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, FlatList, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import * as api from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { TabParamList } from '../App';
 
 interface ChatMessage {
   id: number;
@@ -12,19 +14,36 @@ interface ChatMessage {
   timestamp: string;
 }
 
-export defaulgit statut function ChatScreen() {
+type Props = BottomTabScreenProps<TabParamList, 'Chat'>;
+
+export default function ChatScreen({ navigation }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [content, setContent] = useState('');
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      const userString = await AsyncStorage.getItem('user');
+      if (userString) {
+        const user = JSON.parse(userString);
+        setCurrentUserName(user.name);
+      }
+    };
+    loadUserData();
+  }, []);
 
   const fetchMessages = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (token) {
         const fetchedMessages = await api.getChatMessages(token);
-        setMessages(fetchedMessages);
+        if (Array.isArray(fetchedMessages)) {
+          setMessages(fetchedMessages);
+        }
       }
     } catch (error) {
-      console.error(error);
+      console.error("Failed to fetch chat messages:", error);
+      // Alert.alert('Ошибка', 'Не удалось загрузить сообщения чата.');
     }
   };
 
@@ -46,15 +65,16 @@ export defaulgit statut function ChatScreen() {
         fetchMessages(); // Refresh messages after sending a new one
       }
     } catch (error) {
-      console.error(error);
+      console.error("Failed to send message:", error);
       Alert.alert('Ошибка', 'Не удалось отправить сообщение.');
     }
   };
 
   const renderItem = ({ item }: { item: ChatMessage }) => (
-    <View style={styles.messageContainer}>
+    <View style={[styles.messageContainer, item.sender.name === currentUserName ? styles.myMessage : styles.otherMessage]}>
       <Text style={styles.messageSender}>{item.sender.name}:</Text>
       <Text style={styles.messageContent}>{item.content}</Text>
+      <Text style={styles.messageTime}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
     </View>
   );
 
@@ -64,7 +84,11 @@ export defaulgit statut function ChatScreen() {
       style={styles.background}
       blurRadius={2}
     >
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+      >
         <Text style={styles.title}>Общий чат</Text>
         <FlatList
           data={messages}
@@ -85,7 +109,7 @@ export defaulgit statut function ChatScreen() {
             <Text style={styles.buttonText}>Отправить</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </ImageBackground>
   );
 }
@@ -96,6 +120,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
     padding: 16,
+    paddingTop: 40, // Adjust for header if needed
   },
   title: {
     fontSize: 28,
@@ -103,7 +128,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     marginBottom: 20,
-    marginTop: 40,
+    marginTop: 20,
   },
   list: {
     flex: 1,
@@ -113,15 +138,31 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
+    maxWidth: '80%',
+  },
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#f39c12',
+  },
+  otherMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   messageSender: {
     fontWeight: 'bold',
-    color: '#f39c12',
+    color: '#C9E3AC',
+    marginBottom: 2,
   },
   messageContent: {
     fontSize: 16,
     color: '#fff',
     marginTop: 4,
+  },
+  messageTime: {
+    fontSize: 10,
+    color: '#ccc',
+    alignSelf: 'flex-end',
+    marginTop: 5,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -129,6 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   input: {
     flex: 1,
