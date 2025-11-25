@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { RouteProp, useNavigation, NavigationProp, useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as api from '../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, FlatList, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { RootStackParamList } from '../App';
+import * as api from '../utils/api';
 
 type ForumTopicScreenRouteProp = RouteProp<RootStackParamList, 'ForumTopic'>;
 
@@ -98,7 +98,7 @@ export default function ForumTopicScreen() {
     <View style={[styles.messageContainer, item.sender.name === currentUser?.name ? styles.myMessage : styles.otherMessage]}>
       <Text style={styles.messageAuthor}>{item.sender.name}</Text>
       <Text style={styles.messageContent}>{item.content}</Text>
-      <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
+      <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleString()}</Text>
       <View style={styles.postActions}>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item.id)}>
           <Ionicons name="thumbs-up-outline" size={20} color="#ccc" />
@@ -136,7 +136,6 @@ export default function ForumTopicScreen() {
           keyExtractor={(item) => item.id.toString()}
           style={styles.messageList}
           contentContainerStyle={styles.messageListContent}
-          inverted // To show latest messages at the bottom
         />
 
         <View style={styles.inputContainer}>

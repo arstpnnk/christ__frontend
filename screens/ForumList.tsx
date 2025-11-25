@@ -38,7 +38,8 @@ export default function ForumList({ navigation }: ForumListProps) {
 
       if (token) {
         const fetchedPosts: ForumPost[] = await api.getForumPosts(token);
-        setPosts(fetchedPosts || []); // Fallback to empty array to prevent filter error
+        const sortedPosts = fetchedPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setPosts(sortedPosts || []); // Fallback to empty array to prevent filter error
       }
     } catch (error) {
       console.error(error);

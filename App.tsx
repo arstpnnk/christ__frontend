@@ -1,26 +1,24 @@
-import 'react-native-url-polyfill/auto'
-import "react-native-gesture-handler";
-import React, { useEffect, useState } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons"; // Using @expo/vector-icons for better Expo compatibility
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, TouchableOpacity, Text, StyleSheet, AppRegistry } from "react-native";
-import * as api from "./utils/api";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
+import { AppRegistry } from "react-native";
+import "react-native-gesture-handler";
+import 'react-native-url-polyfill/auto';
 
 // Screens (placeholders for now)
-import LoginScreen from "./screens/LoginScreen";
-import RegisterScreen from "./screens/RegisterScreen";
-import FileUploadScreen from "./screens/FileUploadScreen";
-import GuestScreen from "./screens/GuestScreen";
 import CalendarScreen from "./screens/CalendarScreen";
-import ChatScreen from "./screens/ChatScreen";
+import FileUploadScreen from "./screens/FileUploadScreen";
 import ForumScreen from "./screens/ForumScreen";
 import ForumTopicScreen from "./screens/ForumTopicScreen";
-import PriestQuestionListScreen from "./screens/PriestQuestionListScreen";
-import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
+import GuestScreen from "./screens/GuestScreen";
+import LoginScreen from "./screens/LoginScreen";
 import NotificationScreen from "./screens/NotificationScreen";
+import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
+import PriestQuestionListScreen from "./screens/PriestQuestionListScreen";
+import RegisterScreen from "./screens/RegisterScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -108,11 +106,11 @@ function MainTabs() {
             component={CalendarScreen}
             options={{ title: "Календарь" }}
           />
-          <Tab.Screen
+          {/* <Tab.Screen
             name="Chat"
             component={ChatScreen}
             options={{ title: "Чат" }}
-          />
+          /> */}
         </>
       )}
     </Tab.Navigator>

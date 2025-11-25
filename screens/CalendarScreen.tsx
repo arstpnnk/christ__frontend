@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from "react";
+import Icon from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
+  Alert,
+  Image,
   LayoutAnimation,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
   UIManager,
-  Image,
-  Alert,
+  View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Icon from "@expo/vector-icons/Ionicons";
-import * as api from "../utils/api";
-import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
+import * as api from "../utils/api";
 
 if (Platform.OS === "android") {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -42,18 +42,19 @@ export default function CalendarScreen() {
         try {
           const userString = await AsyncStorage.getItem("user");
           const user = userString ? JSON.parse(userString) : null;
+          let parsed = {};
 
           if (user && user.id) {
             const savedNotes = await AsyncStorage.getItem(`calendarNotes_${user.id}`);
             if (savedNotes) {
-              const parsed = JSON.parse(savedNotes);
+              parsed = JSON.parse(savedNotes);
               setNotes(parsed);
-              updateMarkedDates(parsed);
             }
           }
 
           const fetchedHolidays = await api.getHolidays(token);
           setHolidays(fetchedHolidays);
+          updateMarkedDates(parsed, fetchedHolidays);
 
           const notifications = await api.getNotifications(token);
           if (Array.isArray(notifications)) {
@@ -69,8 +70,10 @@ export default function CalendarScreen() {
     checkLoginStatus();
   }, []);
 
-  const updateMarkedDates = (notesData: { [key: string]: string }, selected: string | null = selectedDate) => {
+  const updateMarkedDates = (notesData: { [key: string]: string }, holidaysData: any[], selected: string | null = selectedDate) => {
     const newMarks: { [key: string]: any } = {};
+
+    // Mark notes
     Object.keys(notesData).forEach((date) => {
       newMarks[date] = {
         selected: true,
@@ -78,6 +81,31 @@ export default function CalendarScreen() {
         selectedTextColor: "#000",
       };
     });
+
+    // Mark holidays
+    holidaysData.forEach((holidayItem) => {
+      const holidayDate = holidayItem.date;
+      if (newMarks[holidayDate]) {
+        // If there's already a note, add a dot to it
+        newMarks[holidayDate].dots = [{
+          key: 'holiday',
+          color: '#007bff',
+          selectedDotColor: '#007bff'
+        }];
+        newMarks[holidayDate].marked = true;
+      } else {
+        newMarks[holidayDate] = {
+          dots: [{
+            key: 'holiday',
+            color: '#007bff',
+            selectedDotColor: '#007bff'
+          }],
+          marked: true
+        };
+      }
+    });
+
+    // Mark selected date
     if (selected) {
       newMarks[selected] = {
         ...newMarks[selected],
@@ -106,7 +134,7 @@ export default function CalendarScreen() {
     if (token) {
       await api.createNote(token, note);
     }
-    updateMarkedDates(updated);
+    updateMarkedDates(updated, holidays); // Pass holidays as well
     setNote("");
     setOpenNote(false);
   };
@@ -138,11 +166,12 @@ export default function CalendarScreen() {
           <Calendar
             onDayPress={(day) => {
               setSelectedDate(day.dateString);
-              updateMarkedDates(notes, day.dateString);
+              updateMarkedDates(notes, holidays, day.dateString); // Pass holidays as well
               setOpenNote(false); 
             }}
             monthFormat={"MMMM yyyy"}
             markedDates={markedDates}
+            markingType={'multi-dot'}
             theme={{
               backgroundColor: "transparent",
               calendarBackground: "transparent",

@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  Alert,
+  Dimensions,
+  Image,
+  ImageBackground,
+  Linking,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ImageBackground,
-  StyleSheet,
-  Image,
-  Dimensions,
-  Linking,
-  Platform,
-  Alert,
+  View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as api from "../utils/api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
@@ -122,13 +122,13 @@ export default function LoginScreen({ navigation }: Props) {
           <Text style={styles.loginText}>Войти</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.googleButton} onPress={onGoogleLogin}>
+        {/* <TouchableOpacity style={styles.googleButton} onPress={onGoogleLogin}>
           <Image
             source={require("../assets/google.png")}
             style={styles.googleIcon}
           />
           <Text style={styles.googleText}>Продолжить с Google</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity onPress={() => navigation.navigate("Register")}>
           <Text style={styles.link}>Создать аккаунт</Text>
