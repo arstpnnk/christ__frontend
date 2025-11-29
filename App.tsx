@@ -4,10 +4,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
-import { AppRegistry } from "react-native";
+import { AppRegistry, Image, StyleSheet, View } from "react-native";
 import "react-native-gesture-handler";
-import 'react-native-url-polyfill/auto';
-
+import "react-native-url-polyfill/auto";
 // Screens (placeholders for now)
 import CalendarScreen from "./screens/CalendarScreen";
 import FileUploadScreen from "./screens/FileUploadScreen";
@@ -77,34 +76,49 @@ function MainTabs() {
           marginRight: 18,
           marginLeft: 18,
         },
-        tabBarActiveTintColor: "#C9E3AC",
+        tabBarActiveTintColor: "#000",
         tabBarInactiveTintColor: "#ccc",
-        tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = "";
-          if (route.name === "Guest") iconName = "home";
-          else if (route.name === "Calendar") iconName = "calendar";
-          else if (route.name === "Forum") iconName = "people";
-          else if (route.name === "Chat") iconName = "chatbubbles";
-          return <Ionicons name={iconName} size={size} color={color} />;
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconComponent;
+          const iconStyle = { width: size, height: size, tintColor: color };
+          
+          if (route.name === "Guest") {
+            iconComponent = <Image source={require("./assets/homeIcon.png")} style={iconStyle} />;
+          } else if (route.name === "Calendar") {
+            iconComponent = <Image source={require("./assets/calendarIcon.png")} style={iconStyle} />;
+          } else if (route.name === "Forum") {
+            iconComponent = <Image source={require("./assets/chatIcon.png")} style={iconStyle} />;
+          } else if (route.name === "Chat") {
+            iconComponent = <Ionicons name="chatbubbles" size={size} color={color} />;
+          }
+
+          return (
+            <View style={focused ? styles.activeTab : styles.inactiveTab}>
+              {iconComponent}
+            </View>
+          );
         },
       })}
     >
       <Tab.Screen
         name="Guest"
         component={GuestScreen}
-        options={{ title: "Главная" }}
+        options={{ title: "" }}
+      />
+      <Tab.Screen
+        name="Calendar"
+        // @ts-ignore
+        component={(props) => (
+          <CalendarScreen {...props} isLoggedIn={isLoggedIn} />
+        )}
+        options={{ title: "" }}
       />
       {isLoggedIn && (
         <>
           <Tab.Screen
             name="Forum"
             component={ForumScreen}
-            options={{ title: "Форум" }}
-          />
-          <Tab.Screen
-            name="Calendar"
-            component={CalendarScreen}
-            options={{ title: "Календарь" }}
+            options={{ title: "" }}
           />
           {/* <Tab.Screen
             name="Chat"
@@ -141,3 +155,17 @@ export default function App() {
 }
 
 AppRegistry.registerComponent("main", () => App)
+
+const styles = StyleSheet.create({
+  activeTab: {
+    backgroundColor: '#C9E3AC',
+    padding: 5,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderRadius: 8,
+    color: 'black'
+  },
+  inactiveTab: {
+    padding: 5,
+  },
+});;

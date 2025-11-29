@@ -1,12 +1,28 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { RootStackParamList } from '../App';
-import * as api from '../utils/api';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { RootStackParamList } from "../App";
+import * as api from "../utils/api";
 
-type ForumTopicScreenRouteProp = RouteProp<RootStackParamList, 'ForumTopic'>;
+type ForumTopicScreenRouteProp = RouteProp<RootStackParamList, "ForumTopic">;
 
 interface ChatMessage {
   id: number;
@@ -23,15 +39,15 @@ export default function ForumTopicScreen() {
   const { postId, postTitle } = route.params;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     const getData = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
+      const storedToken = await AsyncStorage.getItem("token");
       setToken(storedToken);
-      const userString = await AsyncStorage.getItem('user');
+      const userString = await AsyncStorage.getItem("user");
       if (userString) {
         setCurrentUser(JSON.parse(userString));
       }
@@ -42,13 +58,16 @@ export default function ForumTopicScreen() {
   const fetchMessages = useCallback(async () => {
     if (!token) return;
     try {
-      const fetchedMessages: ChatMessage[] = await api.getForumPostMessages(token, postId);
+      const fetchedMessages: ChatMessage[] = await api.getForumPostMessages(
+        token,
+        postId
+      );
       if (Array.isArray(fetchedMessages)) {
         setMessages(fetchedMessages);
       }
     } catch (error) {
       console.error("Failed to fetch messages:", error);
-      Alert.alert('Ошибка', 'Не удалось загрузить сообщения.');
+      Alert.alert("Ошибка", "Не удалось загрузить сообщения.");
     }
   }, [token, postId]);
 
@@ -64,11 +83,11 @@ export default function ForumTopicScreen() {
     }
     try {
       await api.sendForumPostMessage(token, postId, newMessage);
-      setNewMessage('');
+      setNewMessage("");
       fetchMessages(); // Refresh messages after sending
     } catch (error) {
       console.error("Failed to send message:", error);
-      Alert.alert('Ошибка', 'Не удалось отправить сообщение.');
+      Alert.alert("Ошибка", "Не удалось отправить сообщение.");
     }
   };
 
@@ -79,7 +98,7 @@ export default function ForumTopicScreen() {
       fetchMessages();
     } catch (error) {
       console.error("Failed to like message:", error);
-      Alert.alert('Ошибка', 'Не удалось поставить лайк.');
+      Alert.alert("Ошибка", "Не удалось поставить лайк.");
     }
   };
 
@@ -90,24 +109,57 @@ export default function ForumTopicScreen() {
       fetchMessages();
     } catch (error) {
       console.error("Failed to dislike message:", error);
-      Alert.alert('Ошибка', 'Не удалось поставить дизлайк.');
+      Alert.alert("Ошибка", "Не удалось поставить дизлайк.");
     }
   };
 
   const renderMessage = ({ item }: { item: ChatMessage }) => (
-    <View style={[styles.messageContainer, item.sender.name === currentUser?.name ? styles.myMessage : styles.otherMessage]}>
+    <View
+      style={[
+        styles.messageContainer,
+        item.sender.name === currentUser?.name
+          ? styles.myMessage
+          : styles.otherMessage,
+      ]}
+    >
       <Text style={styles.messageAuthor}>{item.sender.name}</Text>
       <Text style={styles.messageContent}>{item.content}</Text>
-      <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleString()}</Text>
+      <Text style={styles.messageTime}>
+        {new Date(item.createdAt).toLocaleString()}
+      </Text>
       <View style={styles.postActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item.id)}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleLike(item.id)}
+        >
+          <View style={styles.circleButton}>
+            <Ionicons name="add-outline" size={16} color="#fff" />
+          </View>
+          <Text style={styles.actionText}>{item.likes}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleDislike(item.id)}
+        >
+          <View style={styles.circleButton}>
+            <Ionicons name="remove-outline" size={16} color="#fff" />
+          </View>
+          <Text style={styles.actionText}>{item.dislikes}</Text>
+        </TouchableOpacity>
+        {/* <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleLike(item.id)}
+        >
           <Ionicons name="thumbs-up-outline" size={20} color="#ccc" />
           <Text style={styles.actionText}>{item.likes}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleDislike(item.id)}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleDislike(item.id)}
+        >
           <Ionicons name="thumbs-down-outline" size={20} color="#ccc" />
           <Text style={styles.actionText}>{item.dislikes}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </View>
   );
@@ -124,7 +176,10 @@ export default function ForumTopicScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.title}>{postTitle}</Text>
@@ -147,7 +202,10 @@ export default function ForumTopicScreen() {
             onChangeText={setNewMessage}
             multiline
           />
-          <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={handleSendMessage}
+          >
             <Ionicons name="send" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -164,8 +222,8 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     marginBottom: 10,
   },
@@ -174,57 +232,58 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   messageList: {
     flex: 1,
-    paddingHorizontal: 16,
+    // paddingHorizontal: 16,
   },
   messageListContent: {
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   messageContainer: {
     padding: 10,
-    borderRadius: 10,
     marginBottom: 10,
-    maxWidth: '80%',
+    maxWidth: "100%",
   },
   myMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#f39c12',
+    width: "100%",
+    alignSelf: "flex-end",
+    backgroundColor: "rgba(234, 144, 16, 0.3)",
   },
   otherMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: "100%",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
   messageAuthor: {
     fontSize: 12,
-    color: '#ddd',
+    color: "#ddd",
     marginBottom: 2,
   },
   messageContent: {
     fontSize: 16,
-    color: '#fff',
+    color: "#fff",
   },
   messageTime: {
     fontSize: 10,
-    color: '#ccc',
-    alignSelf: 'flex-end',
+    color: "#ccc",
+    alignSelf: "flex-end",
     marginTop: 5,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderTopColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    color: '#fff',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    color: "#fff",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -232,24 +291,41 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   sendButton: {
-    backgroundColor: '#f39c12',
+    backgroundColor: "#f39c12ff",
     borderRadius: 20,
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   postActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 12,
+    justifyContent: "flex-end",
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginRight: 16,
   },
-  actionText: {
-    color: '#ccc',
-    marginLeft: 4,
+  circleButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'white',
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 4,
   },
+  actionText: {
+    color: "#ccc",
+    marginLeft: 4,
+    fontSize: 14,
+  },
+  // actionText: {
+  //   color: "#ccc",
+  //   marginLeft: 4,
+  // },
 });

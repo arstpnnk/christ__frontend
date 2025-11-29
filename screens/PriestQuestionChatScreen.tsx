@@ -159,11 +159,12 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#f39c12',
+    backgroundColor: '#67A1BA',
   },
   otherMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: '90%',
+    backgroundColor: '#487982',
   },
   messageAuthor: {
     fontSize: 12,

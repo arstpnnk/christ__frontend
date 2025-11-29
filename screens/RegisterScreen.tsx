@@ -39,6 +39,11 @@ export default function RegisterScreen({ navigation }: Props) {
       Alert.alert("Ошибка", "Неверный формат электронной почты.");
       return;
     }
+    const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+    if (!phoneRegex.test(phone)) {
+      Alert.alert("Ошибка", "Неверный формат номера телефона. Используйте только цифры, +, -, () и пробелы, длина от 7 до 20 символов.");
+      return;
+    }
     navigation.navigate("FileUpload", {
       email,
       password,

@@ -1,6 +1,9 @@
-import Icon from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import {
+  NavigationProp,
+  useIsFocused,
+  useNavigation,
+} from "@react-navigation/native";
 import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
 import {
@@ -38,6 +41,7 @@ export default function GuestScreen() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [location, setLocation] = useState<any>(defaultLocation);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     (async () => {
@@ -65,12 +69,14 @@ export default function GuestScreen() {
           }
         } catch (error) {
           console.error("Failed to fetch notifications:", error);
-          // Handle error, e.g., set unreadNotifications to 0 or show an alert
         }
       }
     };
-    checkLoginStatus();
-  }, []);
+
+    if (isFocused) {
+      checkLoginStatus();
+    }
+  }, [isFocused]);
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
@@ -88,13 +94,17 @@ export default function GuestScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleLogout}>
-            <Icon name="person-circle-outline" size={28} color="#fff" />
+            <Image source={require("../assets/userIcon.png")} />
+            {/* style={styles.logo} */}
+            {/* <Icon name="person-circle-outline" size={28} color="#fff" /> */}
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {isLoggedIn ? "Вы вошли в систему" : "Вы вошли как гость"}
+            Христианский помощник
+            {/* {isLoggedIn ? "Вы вошли в систему" : "Вы вошли как гость"} */}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate("Notification")}>
-            <Icon name="notifications-outline" size={26} color="#fff" />
+            {/* <Icon name="notifications-outline" size={26} color="#fff" /> */}
+            <Image source={require("../assets/notificationIcon.png")} />
             {unreadNotifications > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationText}>
@@ -176,7 +186,10 @@ const styles = StyleSheet.create({
   headerTitle: { color: "#fff", fontSize: 18, fontWeight: "600" },
   quotes: { padding: 10 },
   quoteCard: {
-    backgroundColor: "#2e2e2e",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderWidth: 2,
+    borderColor: "#67A1BA",
+    borderStyle: "solid",
     borderRadius: 10,
     padding: 10,
     marginRight: 10,
@@ -203,12 +216,16 @@ const styles = StyleSheet.create({
   },
   mapCard: {
     margin: 10,
-    backgroundColor: "#2e2e2e",
     borderRadius: 12,
     padding: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   mapTitle: { color: "#fff", marginBottom: 6 },
-  map: { width: "100%", height: 200, borderRadius: 10 },
+  map: {
+    width: "100%",
+    height: 200,
+    borderRadius: 10,
+  },
   notificationBadge: {
     position: "absolute",
     right: -6,
