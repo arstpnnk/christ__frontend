@@ -122,11 +122,13 @@ export default function ForumTopicScreen() {
           : styles.otherMessage,
       ]}
     >
-      <Text style={styles.messageAuthor}>{item.sender.name}</Text>
+      <View style={styles.messageHeader}>
+        <Text style={styles.messageAuthor}>{item.sender.name}</Text>
+        <Text style={styles.messageTime}>
+          {new Date(item.createdAt).toLocaleString()}
+        </Text>
+      </View>
       <Text style={styles.messageContent}>{item.content}</Text>
-      <Text style={styles.messageTime}>
-        {new Date(item.createdAt).toLocaleString()}
-      </Text>
       <View style={styles.postActions}>
         <TouchableOpacity
           style={styles.actionButton}
@@ -269,8 +271,13 @@ const styles = StyleSheet.create({
   messageTime: {
     fontSize: 10,
     color: "#ccc",
-    alignSelf: "flex-end",
     marginTop: 5,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
   },
   inputContainer: {
     flexDirection: "row",

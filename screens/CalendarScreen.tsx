@@ -96,8 +96,15 @@ export default function CalendarScreen({
               `calendarNotes_${user.id}`
             );
             if (savedNotes) {
-              parsed = JSON.parse(savedNotes);
-              setNotes(parsed);
+              const parsedNotes = JSON.parse(savedNotes);
+              // Data migration for old string-based notes
+              Object.keys(parsedNotes).forEach(key => {
+                if (typeof parsedNotes[key] === 'string') {
+                  parsedNotes[key] = [parsedNotes[key]];
+                }
+              });
+              setNotes(parsedNotes);
+              parsed = parsedNotes;
             }
           }
 
@@ -131,7 +138,7 @@ export default function CalendarScreen({
     Object.keys(notesData).forEach((date) => {
       if (notesData[date] && notesData[date].length > 0) {
         if (!newMarks[date]) newMarks[date] = { dots: [] };
-        newMarks[date].dots.push({ key: "note", color: "#ffb703" });
+        newMarks[date].dots.push({ key: 'note', color: '#ffb703' });
       }
     });
 
@@ -139,7 +146,7 @@ export default function CalendarScreen({
     holidaysData.forEach((holidayItem) => {
       const holidayDate = holidayItem.date;
       if (!newMarks[holidayDate]) newMarks[holidayDate] = { dots: [] };
-      newMarks[holidayDate].dots.push({ key: "holiday", color: "#007bff" });
+      newMarks[holidayDate].dots.push({ key: 'holiday', color: '#007bff' });
     });
 
     // Mark selected date
@@ -148,8 +155,6 @@ export default function CalendarScreen({
         newMarks[selected] = {};
       }
       newMarks[selected].selected = true;
-      newMarks[selected].selectedColor = "#ffb703";
-      newMarks[selected].selectedTextColor = "#000";
     }
 
     setMarkedDates(newMarks);
@@ -191,6 +196,41 @@ export default function CalendarScreen({
     setOpenNote(!openNote);
   };
 
+  const onDayPress = (day: any) => {
+    setSelectedDate(day.dateString);
+    updateMarkedDates(notes, holidays, day.dateString);
+    setOpenNote(false);
+  };
+  
+  const CustomDay = ({ date, state, marking }: { date: any, state: any, marking: any }) => {
+    const { dots, selected } = marking || {};
+    let borderColor = 'transparent';
+    if (dots?.some((d: any) => d.key === 'note')) {
+      borderColor = '#ffb703';
+    } else if (dots?.some((d: any) => d.key === 'holiday')) {
+      borderColor = '#007bff';
+    }
+
+    return (
+      <TouchableOpacity onPress={() => onDayPress(date)} style={[
+          styles.dayContainer, 
+          { borderColor: selected ? '#ffb703' : borderColor,
+            backgroundColor: selected ? '#ffb703' : 'transparent'
+          }
+        ]}>
+        <View style={styles.dotsContainer}>
+          {dots?.map((dot: any) => <View key={dot.key} style={[styles.dot, { backgroundColor: dot.color }]} />)}
+        </View>
+        <Text style={[
+            styles.dayText, 
+            { color: selected ? '#000' : (state === 'disabled' ? '#555' : '#fff') }
+          ]}>
+          {date.day}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <ImageBackground
       source={require("../assets/bg.jpg")}
@@ -216,33 +256,31 @@ export default function CalendarScreen({
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
           <View style={styles.calendarCard}>
             <Calendar
-              onDayPress={(day) => {
-                setSelectedDate(day.dateString);
-                updateMarkedDates(notes, holidays, day.dateString); // Pass holidays as well
-                setOpenNote(false);
-              }}
-              monthFormat={"MMMM yyyy"}
+              dayComponent={CustomDay}
               markedDates={markedDates}
-              markingType={"multi-dot"}
+              monthFormat={"MMMM yyyy"}
               theme={{
                 backgroundColor: "transparent",
                 calendarBackground: "transparent",
                 textSectionTitleColor: "#fff",
-                dayTextColor: "#fff",
-                todayTextColor: "#ffb703",
-                selectedDayTextColor: "#000",
                 monthTextColor: "#fff",
                 arrowColor: "#fff",
+                'stylesheet.calendar.main': {
+                  container: {
+                    backgroundColor: 'transparent'
+                  }
+                }
               }}
             />
             {isLoggedIn &&
               notes[selectedDate] &&
+              Array.isArray(notes[selectedDate]) &&
               notes[selectedDate].map((n, index) => (
                 <View key={index}>
-                  <Text style={styles.savedNote}>{n}</Text>
-                  {index < notes[selectedDate].length - 1 && (
-                    <View style={styles.noteSeparator} />
-                  )}
+                  <Text style={styles.savedNote}>
+                    {n}
+                  </Text>
+                  {index < notes[selectedDate].length - 1 && <View style={styles.noteSeparator} />}
                 </View>
               ))}
             {holiday && (
@@ -404,5 +442,28 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#555",
     marginTop: 10,
+  },
+  dayContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    position: 'absolute',
+    top: 2,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginHorizontal: 1,
+  },
+  dayText: {
+    fontSize: 16,
+    marginTop: 2, // to push the text down a bit from the dots
   },
 });
