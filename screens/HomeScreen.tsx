@@ -1,4 +1,3 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useMemo, useState } from "react";
@@ -300,7 +299,10 @@ export default function HomeScreen() {
             activeOpacity={0.8}
             onPress={() => navigation.navigate("Profile")}
           >
-            <Ionicons name="person-circle-outline" size={28} color="#fff" />
+            <Image
+              source={require("../assets/userIcon.png")}
+              style={styles.headerIcon}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Христианский помощник</Text>
           <TouchableOpacity
@@ -308,7 +310,10 @@ export default function HomeScreen() {
             activeOpacity={0.8}
             onPress={() => navigation.navigate("Notification")}
           >
-            <Ionicons name="notifications-outline" size={24} color="#fff" />
+            <Image
+              source={require("../assets/notificationIcon.png")}
+              style={styles.headerIcon}
+            />
           </TouchableOpacity>
         </View>
 
@@ -522,6 +527,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: "#fff", fontSize: 16, fontWeight: "600" },
   headerIconButton: { padding: 6 },
+  headerIcon: { width: 26, height: 26, resizeMode: "contain" },
 
   searchRow: { paddingHorizontal: 14, paddingBottom: 8 },
   searchBox: {
