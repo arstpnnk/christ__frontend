@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { RootStackParamList } from "../App";
+import * as api from "../utils/api";
 
 type BookReaderRoute = RouteProp<RootStackParamList, "BookReader">;
 
@@ -74,8 +75,13 @@ export default function BookReaderScreen({ route }: { route: BookReaderRoute }) 
   const [pageIndex, setPageIndex] = useState(0);
   const [highlight, setHighlight] = useState<{ pageIndex: number; lineIndex: number } | null>(null);
   const slideX = useRef(new Animated.Value(screenWidth)).current;
+  const horizontalRef = useRef<ScrollView | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [remoteTitle, setRemoteTitle] = useState<string | null>(null);
+  const [remoteLines, setRemoteLines] = useState<string[] | null>(null);
 
   const { bookId } = route.params;
+  const chapter = 1;
 
   const bookmarksKey = useMemo(() => `bookmarks_${bookId}`, [bookId]);
 
@@ -98,22 +104,54 @@ export default function BookReaderScreen({ route }: { route: BookReaderRoute }) 
     return { headerTitle: "Книга", lines: ["Текст будет добавлен позже."] };
   }, [bookId]);
 
+  const effectiveTitle = remoteTitle || headerTitle;
+  const effectiveLines = remoteLines || lines;
+
   const filteredLines = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return lines;
-    return lines.filter((x) => x.toLowerCase().includes(q));
-  }, [lines, search]);
+    if (!q) return effectiveLines;
+    return effectiveLines.filter((x) => x.toLowerCase().includes(q));
+  }, [effectiveLines, search]);
 
   const pages = useMemo(() => {
     const result: string[][] = [];
-    for (let i = 0; i < lines.length; i += PAGE_SIZE) {
-      result.push(lines.slice(i, i + PAGE_SIZE));
+    for (let i = 0; i < effectiveLines.length; i += PAGE_SIZE) {
+      result.push(effectiveLines.slice(i, i + PAGE_SIZE));
     }
     return result.length ? result : [[]];
-  }, [lines]);
+  }, [effectiveLines]);
 
   useEffect(() => {
-    const load = async () => {
+    const init = async () => {
+      const t = await AsyncStorage.getItem("token");
+      setToken(t);
+      try {
+        const chapterResp: any = await api.getBookChapter(bookId, chapter);
+        if (chapterResp?.title) setRemoteTitle(chapterResp.title);
+        if (Array.isArray(chapterResp?.lines)) setRemoteLines(chapterResp.lines);
+      } catch {
+        // fallback to local sample
+      }
+
+      if (t) {
+        try {
+          const remote: any[] = await api.getBookmarks(t, bookId);
+          if (Array.isArray(remote)) {
+            const mapped: Bookmark[] = remote.map((b: any) => ({
+              id: String(b.externalId),
+              pageIndex: Number(b.pageIndex ?? 0),
+              lineIndex: Number(b.lineIndex ?? 0),
+              preview: String(b.preview ?? ""),
+              createdAt: b.createdAt ? Date.parse(b.createdAt) : Date.now(),
+            }));
+            setBookmarks(mapped);
+            return;
+          }
+        } catch {
+          // fallback to local
+        }
+      }
+
       const raw = await AsyncStorage.getItem(bookmarksKey);
       if (!raw) {
         setBookmarks([]);
@@ -127,7 +165,7 @@ export default function BookReaderScreen({ route }: { route: BookReaderRoute }) 
         setBookmarks([]);
       }
     };
-    load();
+    init();
   }, [bookmarksKey]);
 
   useEffect(() => {
@@ -146,17 +184,40 @@ export default function BookReaderScreen({ route }: { route: BookReaderRoute }) 
   const addBookmark = async (pIndex: number, lIndex: number, line: string) => {
     const id = `${bookId}_${pIndex}_${lIndex}`;
     if (bookmarks.some((b) => b.id === id)) return;
-    const next: Bookmark[] = [
-      { id, pageIndex: pIndex, lineIndex: lIndex, preview: line, createdAt: Date.now() },
-      ...bookmarks,
-    ];
-    await persistBookmarks(next);
+    const createdAt = Date.now();
+    const next: Bookmark[] = [{ id, pageIndex: pIndex, lineIndex: lIndex, preview: line, createdAt }, ...bookmarks];
+    setBookmarks(next);
+    if (token) {
+      try {
+        await api.createBookmark(token, {
+          externalId: id,
+          bookId,
+          chapter,
+          pageIndex: pIndex,
+          lineIndex: lIndex,
+          preview: line,
+        });
+      } catch {
+        // keep local state
+      }
+    } else {
+      await persistBookmarks(next);
+    }
     setHighlight({ pageIndex: pIndex, lineIndex: lIndex });
   };
 
   const removeBookmark = async (id: string) => {
     const next = bookmarks.filter((b) => b.id !== id);
-    await persistBookmarks(next);
+    setBookmarks(next);
+    if (token) {
+      try {
+        await api.deleteBookmarkByExternalId(token, id);
+      } catch {
+        // keep local state
+      }
+    } else {
+      await persistBookmarks(next);
+    }
   };
 
   const openBookmarkMenu = (pIndex: number, lIndex: number, line: string) => {
@@ -211,7 +272,7 @@ export default function BookReaderScreen({ route }: { route: BookReaderRoute }) 
         </View>
 
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{headerTitle}</Text>
+          <Text style={styles.title}>{effectiveTitle}</Text>
           {!search.trim() && (
             <Text style={styles.pageHint}>
               {pages.length > 0 ? `Стр. ${pageIndex + 1}/${pages.length}` : ""}
@@ -231,6 +292,9 @@ export default function BookReaderScreen({ route }: { route: BookReaderRoute }) 
           </ScrollView>
         ) : (
           <ScrollView
+            ref={(r) => {
+              horizontalRef.current = r;
+            }}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -292,6 +356,7 @@ export default function BookReaderScreen({ route }: { route: BookReaderRoute }) 
                         setBookmarksOpen(false);
                         setHighlight({ pageIndex: b.pageIndex, lineIndex: b.lineIndex });
                         setPageIndex(b.pageIndex);
+                        horizontalRef.current?.scrollTo({ x: b.pageIndex * screenWidth, animated: true });
                       }}
                     >
                       <Text style={styles.bookmarkText} numberOfLines={2}>

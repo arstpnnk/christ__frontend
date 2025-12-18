@@ -1,7 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import React, { useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Image,
   ImageBackground,
   ScrollView,
@@ -12,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { RootStackParamList } from "../App";
+import * as api from "../utils/api";
 
 type Reminder = {
   id: string;
@@ -20,12 +23,26 @@ type Reminder = {
   enabled: boolean;
 };
 
+function getPrayerBookIdFromKey(key: string): string | null {
+  if (key === "morning" || key === "fav_morning" || key === "cat_morning")
+    return "prayer_morning";
+  if (key === "evening" || key === "fav_evening" || key === "cat_evening")
+    return "prayer_evening";
+  if (key === "food" || key === "fav_food" || key === "cat_food")
+    return "prayer_food";
+  if (key === "psalms" || key === "fav_psalms" || key === "cat_psalms")
+    return "psalter";
+  return null;
+}
+
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [search, setSearch] = useState("");
   const [showAllReminders, setShowAllReminders] = useState(false);
   const [showAllFavorites, setShowAllFavorites] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [favoritesSet, setFavoritesSet] = useState<Set<string>>(new Set());
+  const [token, setToken] = useState<string | null>(null);
 
   const [reminders, setReminders] = useState<Reminder[]>([
     {
@@ -187,8 +204,88 @@ export default function HomeScreen() {
     );
   };
 
+  useEffect(() => {
+    const load = async () => {
+      const t = await AsyncStorage.getItem("token");
+      setToken(t);
+      if (t) {
+        try {
+          const remote: any[] = await api.getFavorites(t);
+          if (Array.isArray(remote)) {
+            setFavoritesSet(new Set(remote.map((r: any) => String(r.bookId))));
+            return;
+          }
+        } catch {
+          // fallback to local
+        }
+      }
+
+      const raw = await AsyncStorage.getItem("favorites_books");
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setFavoritesSet(new Set(parsed.map(String)));
+      } catch {}
+    };
+    load();
+  }, []);
+
+  const persistLocalFavorites = async (next: Set<string>) => {
+    await AsyncStorage.setItem(
+      "favorites_books",
+      JSON.stringify(Array.from(next))
+    );
+  };
+
+  const setFavorite = async (bookId: string, enabled: boolean) => {
+    const prev = favoritesSet;
+    const next = new Set(prev);
+    if (enabled) next.add(bookId);
+    else next.delete(bookId);
+    setFavoritesSet(next);
+
+    if (token) {
+      try {
+        if (enabled) await api.addFavorite(token, bookId);
+        else await api.removeFavorite(token, bookId);
+        return;
+      } catch {
+        setFavoritesSet(prev);
+        Alert.alert("Ошибка", "Не удалось обновить избранное");
+        return;
+      }
+    }
+
+    await persistLocalFavorites(next);
+  };
+
+  const openFavoriteMenu = (title: string, bookId: string) => {
+    const isFav = favoritesSet.has(bookId);
+    Alert.alert(title, "", [
+      isFav
+        ? {
+            text: "Убрать из избранного",
+            style: "destructive",
+            onPress: () => setFavorite(bookId, false),
+          }
+        : {
+            text: "Добавить в избранное",
+            onPress: () => setFavorite(bookId, true),
+          },
+      { text: "Отмена", style: "cancel" },
+    ]);
+  };
+
   const visibleReminders = showAllReminders ? reminders : reminders.slice(0, 2);
-  const visibleFavorites = showAllFavorites ? favorites : favorites.slice(0, 2);
+  const favoriteItems = useMemo(() => {
+    return favorites.filter((item: any) => {
+      const bookId = getPrayerBookIdFromKey(item.id);
+      return !!bookId && favoritesSet.has(bookId);
+    });
+  }, [favorites, favoritesSet]);
+  const visibleFavorites = showAllFavorites
+    ? favoriteItems
+    : favoriteItems.slice(0, 2);
 
   return (
     <ImageBackground
@@ -238,10 +335,21 @@ export default function HomeScreen() {
 
           {visibleReminders.map((item) => (
             <View key={item.id} style={styles.reminderCard}>
-              <View style={styles.reminderText}>
+              <TouchableOpacity
+                style={styles.reminderText}
+                activeOpacity={0.85}
+                onPress={() => {
+                  const bookId = getPrayerBookIdFromKey(item.id);
+                  if (bookId) navigation.navigate("BookReader", { bookId });
+                }}
+                onLongPress={() => {
+                  const bookId = getPrayerBookIdFromKey(item.id);
+                  if (bookId) openFavoriteMenu(item.title, bookId);
+                }}
+              >
                 <Text style={styles.cardTitle}>{item.title}</Text>
                 <Text style={styles.cardSubtitle}>{item.timeLabel}</Text>
-              </View>
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => toggleReminder(item.id)}
                 activeOpacity={0.85}
@@ -280,16 +388,29 @@ export default function HomeScreen() {
             Избранное:
           </Text>
 
-          {visibleFavorites.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.85}
-              style={[styles.favoriteRow, { borderColor: item.borderColor }]}
-            >
-              <Text style={styles.favoriteText}>{item.title}</Text>
-              <Image source={item.icon} style={styles.favoriteIcon} />
-            </TouchableOpacity>
-          ))}
+          {visibleFavorites.length === 0 ? (
+            <Text style={styles.emptyText}>Пока нет избранных молитв</Text>
+          ) : (
+            visibleFavorites.map((item: any) => {
+              const bookId = getPrayerBookIdFromKey(item.id);
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.85}
+                  style={[styles.favoriteRow, { borderColor: item.borderColor }]}
+                  onPress={() => {
+                    if (bookId) navigation.navigate("BookReader", { bookId });
+                  }}
+                  onLongPress={() => {
+                    if (bookId) openFavoriteMenu(item.title, bookId);
+                  }}
+                >
+                  <Text style={styles.favoriteText}>{item.title}</Text>
+                  <Image source={item.icon} style={styles.favoriteIcon} />
+                </TouchableOpacity>
+              );
+            })
+          )}
 
           <TouchableOpacity
             style={styles.moreButton}
@@ -321,8 +442,16 @@ export default function HomeScreen() {
                 onPress={
                   c.id === "cat_more"
                     ? () => setShowAllCategories((v) => !v)
-                    : undefined
+                    : () => {
+                        const bookId = getPrayerBookIdFromKey(c.id);
+                        if (bookId) navigation.navigate("BookReader", { bookId });
+                      }
                 }
+                onLongPress={() => {
+                  if (c.id === "cat_more") return;
+                  const bookId = getPrayerBookIdFromKey(c.id);
+                  if (bookId) openFavoriteMenu(String(c.title).replace("\n", " "), bookId);
+                }}
               >
                 <Text style={styles.categoryTitle}>{c.title}</Text>
                 <Image source={c.icon} style={styles.categoryIcon} />
@@ -457,6 +586,7 @@ const styles = StyleSheet.create({
   },
   favoriteText: { color: "#fff", fontSize: 14, fontWeight: "700" },
   favoriteIcon: { width: 26, height: 26, opacity: 0.95 },
+  emptyText: { color: "rgba(255,255,255,0.75)", marginTop: 8 },
 
   categoryGrid: {
     marginTop: 10,

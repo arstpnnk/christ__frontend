@@ -4,27 +4,62 @@ import { useNavigation, NavigationProp } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Modal,
+  Pressable,
   ImageBackground,
   Image,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { RootStackParamList } from "../App";
+import * as api from "../utils/api";
 
-type StoredUser = { name?: string } | null;
+type StoredUser = { name?: string; phone?: string } | null;
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [userName, setUserName] = useState<string>("Гость");
+  const [phone, setPhone] = useState<string>("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     const load = async () => {
-      const userRaw = await AsyncStorage.getItem("user");
-      const user: StoredUser = userRaw ? JSON.parse(userRaw) : null;
-      if (user?.name) setUserName(user.name);
+      const storedToken = await AsyncStorage.getItem("token");
+      setToken(storedToken);
+      setIsLoggedIn(!!storedToken);
+
+      if (storedToken) {
+        try {
+          const user = await api.getUserProfile(storedToken);
+          if (user?.name) setUserName(user.name);
+          else setUserName("Пользователь");
+          if (user?.phone) setPhone(user.phone);
+          await AsyncStorage.setItem("user", JSON.stringify(user));
+        } catch {
+          const userRaw = await AsyncStorage.getItem("user");
+          const user: StoredUser = userRaw ? JSON.parse(userRaw) : null;
+          if (user?.name) setUserName(user.name);
+          if (user?.phone) setPhone(user.phone);
+        }
+      } else {
+        const guestName = await AsyncStorage.getItem("guest_profile_name");
+        const guestPhone = await AsyncStorage.getItem("guest_profile_phone");
+        if (guestName) setUserName(guestName);
+        if (guestPhone) setPhone(guestPhone);
+      }
 
       const soundRaw = await AsyncStorage.getItem("settings_sound");
       if (soundRaw !== null) setSoundEnabled(soundRaw === "1");
@@ -52,6 +87,69 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const openEdit = () => {
+    setEditName(userName === "Гость" ? "" : userName);
+    setEditPhone(phone);
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    const nextName = editName.trim() || "Гость";
+    const nextPhone = editPhone.trim();
+
+    if (isLoggedIn && token) {
+      try {
+        const updated = await api.updateUserProfile(token, {
+          name: nextName,
+          phone: nextPhone,
+        });
+        setUserName(updated?.name || nextName);
+        setPhone(updated?.phone || nextPhone);
+        await AsyncStorage.setItem("user", JSON.stringify(updated));
+        setEditOpen(false);
+      } catch (e: any) {
+        Alert.alert("Ошибка", e?.message || "Не удалось сохранить профиль");
+      }
+      return;
+    }
+
+    await AsyncStorage.setItem("guest_profile_name", nextName);
+    await AsyncStorage.setItem("guest_profile_phone", nextPhone);
+    setUserName(nextName);
+    setPhone(nextPhone);
+    setEditOpen(false);
+  };
+
+  const openChangePassword = () => {
+    setOldPassword("");
+    setNewPassword("");
+    setPasswordOpen(true);
+  };
+
+  const submitChangePassword = async () => {
+    if (!token) return;
+    if (!oldPassword.trim() || !newPassword.trim()) {
+      Alert.alert("Ошибка", "Заполни старый и новый пароль");
+      return;
+    }
+    try {
+      await api.changePassword(token, oldPassword, newPassword);
+      setPasswordOpen(false);
+      Alert.alert("Готово", "Пароль изменен");
+    } catch (e: any) {
+      const raw = String(e?.message || "").trim();
+      const msg =
+        raw === "invalid_old_password"
+          ? "Неправильный старый пароль"
+          : raw === "oauth_user_no_password"
+            ? "Нельзя сменить пароль для входа через Google"
+            : raw === "new_password_required"
+              ? "Новый пароль обязателен"
+              : raw || "Не удалось сменить пароль";
+      Alert.alert("Ошибка", msg);
+    }
+  };
+
   return (
     <ImageBackground
       source={require("../assets/bg.jpg")}
@@ -75,7 +173,11 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.userName}>{userName}</Text>
 
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.editButton}
+            activeOpacity={0.85}
+            onPress={openEdit}
+          >
             <Text style={styles.editText}>Редактировать</Text>
           </TouchableOpacity>
         </View>
@@ -102,18 +204,94 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.actionButton} activeOpacity={0.85}>
-            <Text style={styles.actionText}>Сменить пароль</Text>
-          </TouchableOpacity>
+          {isLoggedIn && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.85}
+              onPress={openChangePassword}
+            >
+              <Text style={styles.actionText}>Сменить пароль</Text>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.logoutButton]}
-            activeOpacity={0.85}
-            onPress={confirmLogout}
-          >
-            <Text style={styles.logoutText}>Выйти из аккаунта</Text>
-          </TouchableOpacity>
+          {isLoggedIn ? (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.logoutButton]}
+              activeOpacity={0.85}
+              onPress={confirmLogout}
+            >
+              <Text style={styles.logoutText}>Выйти из аккаунта</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.loginButton]}
+              activeOpacity={0.85}
+              onPress={() => navigation.reset({ index: 0, routes: [{ name: "Login" }] })}
+            >
+              <Text style={styles.loginText}>Войти в аккаунт</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        <Modal transparent visible={editOpen} animationType="fade" onRequestClose={() => setEditOpen(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setEditOpen(false)} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Редактировать профиль</Text>
+            <TextInput
+              value={editName}
+              onChangeText={setEditName}
+              placeholder="Имя"
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              style={styles.modalInput}
+            />
+            <TextInput
+              value={editPhone}
+              onChangeText={setEditPhone}
+              placeholder="Телефон"
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              style={styles.modalInput}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalBtn} activeOpacity={0.85} onPress={() => setEditOpen(false)}>
+                <Text style={styles.modalBtnText}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnPrimary]} activeOpacity={0.85} onPress={saveEdit}>
+                <Text style={[styles.modalBtnText, styles.modalBtnPrimaryText]}>Сохранить</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal transparent visible={passwordOpen} animationType="fade" onRequestClose={() => setPasswordOpen(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setPasswordOpen(false)} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Смена пароля</Text>
+            <TextInput
+              value={oldPassword}
+              onChangeText={setOldPassword}
+              placeholder="Старый пароль"
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              style={styles.modalInput}
+              secureTextEntry
+            />
+            <TextInput
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="Новый пароль"
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              style={styles.modalInput}
+              secureTextEntry
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalBtn} activeOpacity={0.85} onPress={() => setPasswordOpen(false)}>
+                <Text style={styles.modalBtnText}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnPrimary]} activeOpacity={0.85} onPress={submitChangePassword}>
+                <Text style={[styles.modalBtnText, styles.modalBtnPrimaryText]}>Сменить</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ImageBackground>
   );
@@ -190,4 +368,41 @@ const styles = StyleSheet.create({
 
   logoutButton: { backgroundColor: "rgba(0,0,0,0.55)" },
   logoutText: { color: "#FF6B6B", fontWeight: "900" },
+
+  loginButton: { backgroundColor: "rgba(0,0,0,0.55)" },
+  loginText: { color: "#C9E3AC", fontWeight: "900" },
+
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.45)" },
+  modalCard: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    top: 160,
+    backgroundColor: "rgba(0,0,0,0.88)",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  modalTitle: { color: "#fff", fontWeight: "900", fontSize: 16, marginBottom: 10 },
+  modalInput: {
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: 12,
+    color: "#fff",
+    marginBottom: 10,
+  },
+  modalButtons: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 4 },
+  modalBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  modalBtnPrimary: { backgroundColor: "#F0A84D" },
+  modalBtnText: { color: "#fff", fontWeight: "800" },
+  modalBtnPrimaryText: { color: "#000" },
 });
