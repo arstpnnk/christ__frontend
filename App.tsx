@@ -1,23 +1,30 @@
-import Ionicons from "@expo/vector-icons/Ionicons"; // Using @expo/vector-icons for better Expo compatibility
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import 'react-native-url-polyfill/auto'
+import "react-native-gesture-handler";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
-import { AppRegistry, Image, StyleSheet, View } from "react-native";
-import "react-native-gesture-handler";
-import "react-native-url-polyfill/auto";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Ionicons from "@expo/vector-icons/Ionicons"; // Using @expo/vector-icons for better Expo compatibility
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, TouchableOpacity, Text, StyleSheet, AppRegistry, Image } from "react-native";
+import * as api from "./utils/api";
+
 // Screens (placeholders for now)
-import CalendarScreen from "./screens/CalendarScreen";
+import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
 import FileUploadScreen from "./screens/FileUploadScreen";
+import GuestScreen from "./screens/GuestScreen";
+import CalendarScreen from "./screens/CalendarScreen";
+import ChatScreen from "./screens/ChatScreen";
 import ForumScreen from "./screens/ForumScreen";
 import ForumTopicScreen from "./screens/ForumTopicScreen";
-import GuestScreen from "./screens/GuestScreen";
-import LoginScreen from "./screens/LoginScreen";
-import NotificationScreen from "./screens/NotificationScreen";
-import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
 import PriestQuestionListScreen from "./screens/PriestQuestionListScreen";
-import RegisterScreen from "./screens/RegisterScreen";
+import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
+import NotificationScreen from "./screens/NotificationScreen";
+import HomeScreen from "./screens/HomeScreen";
+import SermonsScreen from "./screens/SermonsScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import BookReaderScreen from "./screens/BookReaderScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -33,10 +40,14 @@ export type RootStackParamList = {
   PriestQuestionList: undefined;
   PriestQuestionChat: { questionId: number; questionTitle: string };
   Notification: undefined;
+  Sermons: undefined;
+  Profile: undefined;
+  BookReader: { bookId: string };
 };
 
 export type TabParamList = {
   Guest: undefined;
+  Practices: undefined;
   Calendar: undefined;
   Forum: undefined;
   Chat: undefined; // Re-adding Chat for now, will implement later
@@ -76,55 +87,63 @@ function MainTabs() {
           marginRight: 18,
           marginLeft: 18,
         },
-        tabBarActiveTintColor: "#000",
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: "#C9E3AC",
         tabBarInactiveTintColor: "#ccc",
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconComponent;
-          const iconStyle = { width: size, height: size, tintColor: color };
-          
-          if (route.name === "Guest") {
-            iconComponent = <Image source={require("./assets/homeIcon.png")} style={iconStyle} />;
-          } else if (route.name === "Calendar") {
-            iconComponent = <Image source={require("./assets/calendarIcon.png")} style={iconStyle} />;
-          } else if (route.name === "Forum") {
-            iconComponent = <Image source={require("./assets/chatIcon.png")} style={iconStyle} />;
-          } else if (route.name === "Chat") {
-            iconComponent = <Ionicons name="chatbubbles" size={size} color={color} />;
+        tabBarLabel:
+          route.name === "Practices"
+            ? "\u0414\u0443\u0445\u043e\u0432\u043d\u044b\u0435 \u043f\u0440\u0430\u043a\u0442\u0438\u043a\u0438"
+            : undefined,
+        tabBarIcon: ({ color, size }) => {
+          if (route.name === "Practices") {
+            return (
+              <Image
+                source={require("./файлы для новых экранов/иконки/Иконка самого таба внизу в навбаре.png")}
+                style={{
+                  width: size,
+                  height: size,
+                  tintColor: color,
+                }}
+                resizeMode="contain"
+              />
+            );
           }
-
-          return (
-            <View style={focused ? styles.activeTab : styles.inactiveTab}>
-              {iconComponent}
-            </View>
-          );
+          let iconName: keyof typeof Ionicons.glyphMap = "ellipse";
+          if (route.name === "Guest") iconName = "home";
+          else if (route.name === "Calendar") iconName = "calendar";
+          else if (route.name === "Forum") iconName = "people";
+          else if (route.name === "Chat") iconName = "chatbubbles";
+          return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
       <Tab.Screen
         name="Guest"
         component={GuestScreen}
-        options={{ title: "" }}
+        options={{ title: "Главная" }}
       />
       <Tab.Screen
-        name="Calendar"
-        // @ts-ignore
-        component={(props) => (
-          <CalendarScreen {...props} isLoggedIn={isLoggedIn} />
-        )}
-        options={{ title: "" }}
+        name="Practices"
+        component={HomeScreen}
+        options={{ title: "Духовные практики", headerShown: false }}
       />
       {isLoggedIn && (
         <>
           <Tab.Screen
             name="Forum"
             component={ForumScreen}
-            options={{ title: "" }}
+            options={{ title: "Форум" }}
           />
-          {/* <Tab.Screen
+          <Tab.Screen
+            name="Calendar"
+            component={CalendarScreen}
+            options={{ title: "Календарь" }}
+          />
+          <Tab.Screen
             name="Chat"
             component={ChatScreen}
             options={{ title: "Чат" }}
-          /> */}
+          />
         </>
       )}
     </Tab.Navigator>
@@ -149,23 +168,12 @@ export default function App() {
           component={PriestQuestionChatScreen}
         />
         <Stack.Screen name="Notification" component={NotificationScreen} />
+        <Stack.Screen name="Sermons" component={SermonsScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="BookReader" component={BookReaderScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
 AppRegistry.registerComponent("main", () => App)
-
-const styles = StyleSheet.create({
-  activeTab: {
-    backgroundColor: '#C9E3AC',
-    padding: 5,
-    paddingLeft: 10,
-    paddingRight: 10,
-    borderRadius: 8,
-    color: 'black'
-  },
-  inactiveTab: {
-    padding: 5,
-  },
-});;

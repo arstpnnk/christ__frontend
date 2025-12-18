@@ -328,6 +328,35 @@ export async function getUserProfile(token: string) {
   });
 }
 
+export async function updateUserProfile(
+  token: string,
+  body: { name?: string; phone?: string }
+) {
+  return request("/users/me", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function changePassword(
+  token: string,
+  oldPassword: string,
+  newPassword: string
+) {
+  return request("/users/me/password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+}
+
 export async function likeForumPost(token: string, postId: number) {
   return request(`/forum/${postId}/like`, {
     method: "POST",
@@ -419,5 +448,71 @@ export async function uploadFile(token: string, file: any) {
       Authorization: `Bearer ${token}`,
     },
     body: formData,
+  });
+}
+
+export async function getBookChapter(bookId: string, chapter: number = 1) {
+  const safeBookId = encodeURIComponent(bookId);
+  return request(`/books/${safeBookId}/chapters/${chapter}`);
+}
+
+export async function getBookmarks(token: string, bookId: string) {
+  const safeBookId = encodeURIComponent(bookId);
+  return request(`/bookmarks?bookId=${safeBookId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createBookmark(
+  token: string,
+  body: {
+    externalId: string;
+    bookId: string;
+    chapter: number;
+    pageIndex: number;
+    lineIndex: number;
+    preview: string;
+  }
+) {
+  return request("/bookmarks", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteBookmarkByExternalId(token: string, externalId: string) {
+  const safeId = encodeURIComponent(externalId);
+  return request(`/bookmarks/external/${safeId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getFavorites(token: string) {
+  return request("/favorites", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function addFavorite(token: string, bookId: string) {
+  return request("/favorites", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ bookId }),
+  });
+}
+
+export async function removeFavorite(token: string, bookId: string) {
+  const safeId = encodeURIComponent(bookId);
+  return request(`/favorites/${safeId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
