@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons"; // Using @expo/vector-icons for better Expo compatibility
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, TouchableOpacity, Text, StyleSheet, AppRegistry } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, AppRegistry, Image } from "react-native";
 import * as api from "./utils/api";
 
 // Screens (placeholders for now)
@@ -21,6 +21,8 @@ import ForumTopicScreen from "./screens/ForumTopicScreen";
 import PriestQuestionListScreen from "./screens/PriestQuestionListScreen";
 import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
 import NotificationScreen from "./screens/NotificationScreen";
+import HomeScreen from "./screens/HomeScreen";
+import SermonsScreen from "./screens/SermonsScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -36,10 +38,12 @@ export type RootStackParamList = {
   PriestQuestionList: undefined;
   PriestQuestionChat: { questionId: number; questionTitle: string };
   Notification: undefined;
+  Sermons: undefined;
 };
 
 export type TabParamList = {
   Guest: undefined;
+  Practices: undefined;
   Calendar: undefined;
   Forum: undefined;
   Chat: undefined; // Re-adding Chat for now, will implement later
@@ -79,10 +83,28 @@ function MainTabs() {
           marginRight: 18,
           marginLeft: 18,
         },
+        tabBarShowLabel: false,
         tabBarActiveTintColor: "#C9E3AC",
         tabBarInactiveTintColor: "#ccc",
+        tabBarLabel:
+          route.name === "Practices"
+            ? "\u0414\u0443\u0445\u043e\u0432\u043d\u044b\u0435 \u043f\u0440\u0430\u043a\u0442\u0438\u043a\u0438"
+            : undefined,
         tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = "";
+          if (route.name === "Practices") {
+            return (
+              <Image
+                source={require("./файлы для новых экранов/иконки/Иконка самого таба внизу в навбаре.png")}
+                style={{
+                  width: size,
+                  height: size,
+                  tintColor: color,
+                }}
+                resizeMode="contain"
+              />
+            );
+          }
+          let iconName: keyof typeof Ionicons.glyphMap = "ellipse";
           if (route.name === "Guest") iconName = "home";
           else if (route.name === "Calendar") iconName = "calendar";
           else if (route.name === "Forum") iconName = "people";
@@ -95,6 +117,11 @@ function MainTabs() {
         name="Guest"
         component={GuestScreen}
         options={{ title: "Главная" }}
+      />
+      <Tab.Screen
+        name="Practices"
+        component={HomeScreen}
+        options={{ title: "Духовные практики", headerShown: false }}
       />
       {isLoggedIn && (
         <>
@@ -137,6 +164,7 @@ export default function App() {
           component={PriestQuestionChatScreen}
         />
         <Stack.Screen name="Notification" component={NotificationScreen} />
+        <Stack.Screen name="Sermons" component={SermonsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

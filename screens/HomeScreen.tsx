@@ -23,6 +23,10 @@ type Reminder = {
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [search, setSearch] = useState("");
+  const [showAllReminders, setShowAllReminders] = useState(false);
+  const [showAllFavorites, setShowAllFavorites] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
   const [reminders, setReminders] = useState<Reminder[]>([
     {
       id: "morning",
@@ -34,6 +38,18 @@ export default function HomeScreen() {
       id: "evening",
       title: "Вечерняя молитва",
       timeLabel: "20:00 / 27 дек.",
+      enabled: false,
+    },
+    {
+      id: "food",
+      title: "Молитва перед едой",
+      timeLabel: "12:30 / 27 дек.",
+      enabled: true,
+    },
+    {
+      id: "psalms",
+      title: "Чтение псалмов",
+      timeLabel: "21:00 / 27 дек.",
       enabled: false,
     },
   ]);
@@ -52,11 +68,23 @@ export default function HomeScreen() {
         icon: require("../файлы для новых экранов/иконки/иконка вечерней молитвы.png"),
         borderColor: "#E1C400",
       },
+      {
+        id: "fav_food",
+        title: "Молитва перед едой",
+        icon: require("../файлы для новых экранов/иконки/иконка молитва перед едой.png"),
+        borderColor: "#4BAE8A",
+      },
+      {
+        id: "fav_psalms",
+        title: "Псалтирь",
+        icon: require("../файлы для новых экранов/иконки/иконка вечерней молитвы.png"),
+        borderColor: "#8AA3FF",
+      },
     ],
     []
   );
 
-  const categories = useMemo(
+  const baseCategories = useMemo(
     () => [
       {
         id: "cat_morning",
@@ -76,15 +104,50 @@ export default function HomeScreen() {
         icon: require("../файлы для новых экранов/иконки/иконка молитва перед едой.png"),
         bg: "#2C5B59",
       },
+    ],
+    []
+  );
+
+  const extraCategories = useMemo(
+    () => [
       {
-        id: "cat_more",
-        title: "Еще...",
-        icon: require("../файлы для новых экранов/иконки/стрелка вниз обычно в кнопке ЕЩЕ.png"),
-        bg: "#3D7A5E",
+        id: "cat_psalms",
+        title: "Псалтирь",
+        icon: require("../файлы для новых экранов/иконки/иконка вечерней молитвы.png"),
+        bg: "#3D4A7A",
+      },
+      {
+        id: "cat_gratitude",
+        title: "Благодарст-\nвенные",
+        icon: require("../файлы для новых экранов/иконки/иконка утреней молитвы.png"),
+        bg: "#6A5A2E",
+      },
+      {
+        id: "cat_short",
+        title: "Короткие\nмолитвы",
+        icon: require("../файлы для новых экранов/иконки/иконка утреней молитвы.png"),
+        bg: "#5C2C57",
       },
     ],
     []
   );
+
+  const moreCategoryCard = useMemo(
+    () => ({
+      id: "cat_more",
+      title: showAllCategories ? "Свернуть" : "Еще...",
+      icon: require("../файлы для новых экранов/иконки/стрелка вниз обычно в кнопке ЕЩЕ.png"),
+      bg: "#3D7A5E",
+    }),
+    [showAllCategories]
+  );
+
+  const categories = useMemo(() => {
+    const expanded = showAllCategories
+      ? [...baseCategories, ...extraCategories]
+      : baseCategories;
+    return [...expanded, moreCategoryCard];
+  }, [baseCategories, extraCategories, moreCategoryCard, showAllCategories]);
 
   const libraryCards = useMemo(
     () => [
@@ -123,6 +186,9 @@ export default function HomeScreen() {
       prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
     );
   };
+
+  const visibleReminders = showAllReminders ? reminders : reminders.slice(0, 2);
+  const visibleFavorites = showAllFavorites ? favorites : favorites.slice(0, 2);
 
   return (
     <ImageBackground
@@ -166,7 +232,7 @@ export default function HomeScreen() {
             Напоминания о духовных практиках:
           </Text>
 
-          {reminders.map((item) => (
+          {visibleReminders.map((item) => (
             <View key={item.id} style={styles.reminderCard}>
               <View style={styles.reminderText}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
@@ -189,11 +255,20 @@ export default function HomeScreen() {
             </View>
           ))}
 
-          <TouchableOpacity style={styles.moreButton} activeOpacity={0.85}>
-            <Text style={styles.moreText}>Еще...</Text>
+          <TouchableOpacity
+            style={styles.moreButton}
+            activeOpacity={0.85}
+            onPress={() => setShowAllReminders((v) => !v)}
+          >
+            <Text style={styles.moreText}>
+              {showAllReminders ? "Свернуть" : "Еще..."}
+            </Text>
             <Image
               source={require("../файлы для новых экранов/иконки/стрелка вниз обычно в кнопке ЕЩЕ.png")}
-              style={styles.moreArrow}
+              style={[
+                styles.moreArrow,
+                showAllReminders && styles.moreArrowExpanded,
+              ]}
             />
           </TouchableOpacity>
 
@@ -201,7 +276,7 @@ export default function HomeScreen() {
             Избранное:
           </Text>
 
-          {favorites.map((item) => (
+          {visibleFavorites.map((item) => (
             <TouchableOpacity
               key={item.id}
               activeOpacity={0.85}
@@ -212,11 +287,20 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity style={styles.moreButton} activeOpacity={0.85}>
-            <Text style={styles.moreText}>Еще...</Text>
+          <TouchableOpacity
+            style={styles.moreButton}
+            activeOpacity={0.85}
+            onPress={() => setShowAllFavorites((v) => !v)}
+          >
+            <Text style={styles.moreText}>
+              {showAllFavorites ? "Свернуть" : "Еще..."}
+            </Text>
             <Image
               source={require("../файлы для новых экранов/иконки/стрелка вниз обычно в кнопке ЕЩЕ.png")}
-              style={styles.moreArrow}
+              style={[
+                styles.moreArrow,
+                showAllFavorites && styles.moreArrowExpanded,
+              ]}
             />
           </TouchableOpacity>
 
@@ -230,6 +314,11 @@ export default function HomeScreen() {
                 key={c.id}
                 activeOpacity={0.85}
                 style={[styles.categoryCard, { backgroundColor: c.bg }]}
+                onPress={
+                  c.id === "cat_more"
+                    ? () => setShowAllCategories((v) => !v)
+                    : undefined
+                }
               >
                 <Text style={styles.categoryTitle}>{c.title}</Text>
                 <Image source={c.icon} style={styles.categoryIcon} />
@@ -262,7 +351,11 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          <TouchableOpacity style={styles.listenButton} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.listenButton}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate("Sermons")}
+          >
             <Text style={styles.listenText}>Слушать проповеди</Text>
             <Image
               source={require("../файлы для новых экранов/иконки/иконки слушать проповеди.png")}
@@ -338,6 +431,7 @@ const styles = StyleSheet.create({
   },
   moreText: { color: "#fff", fontWeight: "700" },
   moreArrow: { width: 16, height: 16, opacity: 0.95 },
+  moreArrowExpanded: { transform: [{ rotate: "180deg" }] },
 
   favoriteRow: {
     marginTop: 10,
@@ -437,4 +531,3 @@ const styles = StyleSheet.create({
   listenText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   listenIcon: { width: 34, height: 18, opacity: 0.95 },
 });
-
