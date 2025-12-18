@@ -21,6 +21,7 @@ import ForumTopicScreen from "./screens/ForumTopicScreen";
 import PriestQuestionListScreen from "./screens/PriestQuestionListScreen";
 import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
 import NotificationScreen from "./screens/NotificationScreen";
+import HomeScreen from "./screens/HomeScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -40,6 +41,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Guest: undefined;
+  Practices: undefined;
   Calendar: undefined;
   Forum: undefined;
   Chat: undefined; // Re-adding Chat for now, will implement later
@@ -84,6 +86,7 @@ function MainTabs() {
         tabBarIcon: ({ color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = "";
           if (route.name === "Guest") iconName = "home";
+          else if (route.name === "Practices") iconName = "sparkles";
           else if (route.name === "Calendar") iconName = "calendar";
           else if (route.name === "Forum") iconName = "people";
           else if (route.name === "Chat") iconName = "chatbubbles";
@@ -95,6 +98,11 @@ function MainTabs() {
         name="Guest"
         component={GuestScreen}
         options={{ title: "Главная" }}
+      />
+      <Tab.Screen
+        name="Practices"
+        component={HomeScreen}
+        options={{ title: "Духовные практики", headerShown: false }}
       />
       {isLoggedIn && (
         <>
