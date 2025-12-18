@@ -42,32 +42,16 @@ export default function SermonsScreen() {
   const items: SermonItem[] = useMemo(
     () => [
       {
-        id: "intro",
-        title: "Вступление",
+        id: "sermon_13",
+        title: "Закон и любовь",
         subtitle: "Локальный файл",
-        date: "",
-        audio: require("../файлы для новых экранов/Проповеди/Вступление..mp3"),
+        audio: require("../файлы для новых экранов/Проповеди/13-zakon-i-lubov.mp3"),
       },
       {
-        id: "god_proof_01",
-        title: "Доказательства существования Бога — Введение",
+        id: "sermon_18",
+        title: "Архангел Гавриил",
         subtitle: "Локальный файл",
-        date: "",
-        audio: require("../файлы для новых экранов/Проповеди/01_Доказательства_существования_Бога_Введение.mp3"),
-      },
-      {
-        id: "god_proof_02",
-        title: "Доказательства существования Бога — Естественная теология и Ислам",
-        subtitle: "Локальный файл",
-        date: "",
-        audio: require("../файлы для новых экранов/Проповеди/02_Доказательства_существования_Бога_Естественная_теология_и_Ислам.mp3"),
-      },
-      {
-        id: "lesson_01",
-        title: "Урок №1. Что такое Рай? Как правильно понимать наслаждения в Раю?",
-        subtitle: "Локальный файл",
-        date: "",
-        audio: require("../файлы для новых экранов/Проповеди/Урок №1. Что такое Рай_ Как правильно понимать наслаждения в Раю_.mp3"),
+        audio: require("../файлы для новых экранов/Проповеди/18-arhangel-gavriil.mp3"),
       },
     ],
     []
@@ -112,7 +96,7 @@ export default function SermonsScreen() {
       soundRef.current = sound;
       attachStatusUpdate(sound);
       setActiveId(item.id);
-    } catch (e) {
+    } catch {
       setActiveId(null);
       setIsPlaying(false);
     }
@@ -193,7 +177,9 @@ export default function SermonsScreen() {
                     {!!item.subtitle && (
                       <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
                     )}
-                    {!!item.date && <Text style={styles.cardDate}>{item.date}</Text>}
+                    {!!item.date && (
+                      <Text style={styles.cardDate}>{item.date}</Text>
+                    )}
                   </View>
                   <TouchableOpacity
                     onPress={() => togglePlay(item)}
@@ -226,13 +212,20 @@ export default function SermonsScreen() {
                       <View
                         style={[
                           styles.progressThumb,
-                          { left: Math.max(0, Math.min(barWidth - 12, barWidth * progress - 6)) },
+                          {
+                            left: Math.max(
+                              0,
+                              Math.min(barWidth - 12, barWidth * progress - 6)
+                            ),
+                          },
                         ]}
                       />
                     </TouchableOpacity>
 
                     <View style={styles.timeRow}>
-                      <Text style={styles.timeText}>{formatTime(positionMs)}</Text>
+                      <Text style={styles.timeText}>
+                        {formatTime(positionMs)}
+                      </Text>
                       <Text style={styles.timeText}>
                         {durationMs > 0 ? formatTime(durationMs) : "--:--"}
                       </Text>
