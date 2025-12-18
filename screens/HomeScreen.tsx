@@ -198,7 +198,11 @@ export default function HomeScreen() {
     >
       <View style={styles.overlay}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.headerIconButton} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("Profile")}
+          >
             <Ionicons name="person-circle-outline" size={28} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Христианский помощник</Text>
@@ -328,7 +332,11 @@ export default function HomeScreen() {
 
           <Text style={styles.libraryHeader}>Библия</Text>
 
-          <TouchableOpacity activeOpacity={0.9} style={styles.libraryBigCard}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.libraryBigCard}
+            onPress={() => navigation.navigate("BookReader", { bookId: "bible" })}
+          >
             <Image
               source={libraryCards[0].image}
               style={styles.libraryBigImage}
@@ -343,6 +351,9 @@ export default function HomeScreen() {
                 key={card.id}
                 activeOpacity={0.9}
                 style={styles.librarySmallCard}
+                onPress={() =>
+                  navigation.navigate("BookReader", { bookId: card.id })
+                }
               >
                 <Image source={card.image} style={styles.librarySmallImage} />
                 <View style={styles.librarySmallOverlay} />

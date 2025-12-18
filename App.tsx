@@ -23,6 +23,8 @@ import PriestQuestionChatScreen from "./screens/PriestQuestionChatScreen";
 import NotificationScreen from "./screens/NotificationScreen";
 import HomeScreen from "./screens/HomeScreen";
 import SermonsScreen from "./screens/SermonsScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import BookReaderScreen from "./screens/BookReaderScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -39,6 +41,8 @@ export type RootStackParamList = {
   PriestQuestionChat: { questionId: number; questionTitle: string };
   Notification: undefined;
   Sermons: undefined;
+  Profile: undefined;
+  BookReader: { bookId: string };
 };
 
 export type TabParamList = {
@@ -165,6 +169,8 @@ export default function App() {
         />
         <Stack.Screen name="Notification" component={NotificationScreen} />
         <Stack.Screen name="Sermons" component={SermonsScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="BookReader" component={BookReaderScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
