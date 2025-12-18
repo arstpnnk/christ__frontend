@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { RootStackParamList } from '../App';
 import * as api from '../utils/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface Notification {
   id: number;
@@ -44,15 +44,27 @@ export default function NotificationScreen() {
   }, [fetchNotifications]);
 
   const handleMarkAsRead = async (id: number) => {
+    // Optimistically update the UI
+    setNotifications(prevNotifications =>
+      prevNotifications.map(notif =>
+        notif.id === id ? { ...notif, read: true } : notif
+      )
+    );
     try {
       const token = await AsyncStorage.getItem('token');
       if (token) {
+        // Inform the backend without waiting for a response to block UI
         await api.markNotificationAsRead(token, id);
-        fetchNotifications();
       }
     } catch (error) {
       console.error(error);
       Alert.alert('Ошибка', 'Не удалось отметить уведомление как прочитанное.');
+      // Revert the change if the API call fails
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notif =>
+          notif.id === id ? { ...notif, read: false } : notif
+        )
+      );
     }
   };
 
@@ -130,7 +142,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   readNotification: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#444',
   },
   unreadNotification: {
     backgroundColor: 'rgba(243, 156, 18, 0.3)',

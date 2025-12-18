@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { RouteProp, useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as api from '../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, FlatList, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { RootStackParamList } from '../App';
+import * as api from '../utils/api';
 
 type PriestQuestionChatScreenRouteProp = RouteProp<RootStackParamList, 'PriestQuestionChat'>;
 
@@ -75,7 +75,7 @@ export default function PriestQuestionChatScreen() {
     <View style={[styles.messageContainer, item.author.name === currentUserName ? styles.myMessage : styles.otherMessage]}>
       <Text style={styles.messageAuthor}>{item.author.name}</Text>
       <Text style={styles.messageContent}>{item.content}</Text>
-      <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
+      <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleString()}</Text>
     </View>
   );
 
@@ -103,7 +103,6 @@ export default function PriestQuestionChatScreen() {
           keyExtractor={(item) => item.id.toString()}
           style={styles.messageList}
           contentContainerStyle={styles.messageListContent}
-          inverted // To show latest messages at the bottom
         />
 
         <View style={styles.inputContainer}>
@@ -160,11 +159,12 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#f39c12',
+    backgroundColor: '#67A1BA',
   },
   otherMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: '90%',
+    backgroundColor: '#487982',
   },
   messageAuthor: {
     fontSize: 12,

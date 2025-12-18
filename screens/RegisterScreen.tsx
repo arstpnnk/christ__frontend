@@ -1,19 +1,18 @@
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
-  View,
+  Alert,
+  Image,
+  ImageBackground,
+  Linking,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ImageBackground,
-  StyleSheet,
-  Image,
-  Alert,
-  Linking,
-  Platform,
+  View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-import * as api from "../utils/api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
 
@@ -38,6 +37,11 @@ export default function RegisterScreen({ navigation }: Props) {
     }
     if (!email.includes('@')) {
       Alert.alert("Ошибка", "Неверный формат электронной почты.");
+      return;
+    }
+    const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+    if (!phoneRegex.test(phone)) {
+      Alert.alert("Ошибка", "Неверный формат номера телефона. Используйте только цифры, +, -, () и пробелы, длина от 7 до 20 символов.");
       return;
     }
     navigation.navigate("FileUpload", {
@@ -115,13 +119,13 @@ export default function RegisterScreen({ navigation }: Props) {
           <Text style={styles.loginText}>Продолжить</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.googleButton} onPress={onGoogleLogin}>
+        {/* <TouchableOpacity style={styles.googleButton} onPress={onGoogleLogin}>
           <Image
             source={require("../assets/google.png")}
             style={styles.googleIcon}
           />
           <Text style={styles.googleText}>Продолжить с Google</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
           <Text style={styles.link}>Войти</Text>

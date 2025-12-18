@@ -1,20 +1,19 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import * as DocumentPicker from "expo-document-picker";
 import React, { useState } from "react";
 import {
-  View,
+  Alert,
+  ImageBackground,
+  Platform,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  ImageBackground,
-  StyleSheet,
-  Image,
-  Platform,
-  Alert,
+  View
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as api from "../utils/api";
-import * as DocumentPicker from "expo-document-picker";
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FileUpload">;
 
@@ -92,9 +91,9 @@ export default function FileUploadScreen({ route, navigation }: Props) {
             <Text style={styles.registerButtonText}>Завершить регистрацию</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity onPress={() => navigation.replace("MainTabs")}>
+          {/* <TouchableOpacity onPress={() => navigation.replace("MainTabs")}>
             <Text style={styles.skipText}>Пропустить</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
     </ImageBackground>

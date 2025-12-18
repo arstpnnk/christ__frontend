@@ -1,26 +1,31 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  NavigationProp,
+  useIsFocused,
+  useNavigation,
+} from "@react-navigation/native";
+import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
+  Alert,
   Image,
   ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
-  Alert,
-  Platform,
+  View,
 } from "react-native";
 import MapView, { Marker, UrlTile } from "react-native-maps";
-import Icon from "@expo/vector-icons/Ionicons";
-import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '../App';
-import * as api from '../utils/api';
+import { RootStackParamList } from "../App";
+import * as api from "../utils/api";
 
 const defaultChurches = [
   { id: 1, title: "Церковь Благодать", lat: 53.905, lon: 27.561 },
   { id: 2, title: "Храм Всех Святых", lat: 53.932, lon: 27.578 },
+  { id: 3, title: "Красный костел", lat: 53.897, lon: 27.549 },
+  { id: 4, title: "Собор Сошествия Святого Духа", lat: 53.902, lon: 27.555 },
+  { id: 5, title: "Церковь ЕХБ Вифлеем", lat: 53.874, lon: 27.57 },
 ];
 
 const defaultLocation = {
@@ -36,6 +41,20 @@ export default function GuestScreen() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [location, setLocation] = useState<any>(defaultLocation);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission to access location was denied");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
+    })();
+  }, []);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -50,12 +69,14 @@ export default function GuestScreen() {
           }
         } catch (error) {
           console.error("Failed to fetch notifications:", error);
-          // Handle error, e.g., set unreadNotifications to 0 or show an alert
         }
       }
     };
-    checkLoginStatus();
-  }, []);
+
+    if (isFocused) {
+      checkLoginStatus();
+    }
+  }, [isFocused]);
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
@@ -73,16 +94,22 @@ export default function GuestScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleLogout}>
-            <Icon name="person-circle-outline" size={28} color="#fff" />
+            <Image source={require("../assets/userIcon.png")} />
+            {/* style={styles.logo} */}
+            {/* <Icon name="person-circle-outline" size={28} color="#fff" /> */}
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {isLoggedIn ? "Вы вошли в систему" : "Вы вошли как гость"}
+            Христианский помощник
+            {/* {isLoggedIn ? "Вы вошли в систему" : "Вы вошли как гость"} */}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Notification')}>
-            <Icon name="notifications-outline" size={26} color="#fff" />
+          <TouchableOpacity onPress={() => navigation.navigate("Notification")}>
+            {/* <Icon name="notifications-outline" size={26} color="#fff" /> */}
+            <Image source={require("../assets/notificationIcon.png")} />
             {unreadNotifications > 0 && (
               <View style={styles.notificationBadge}>
-                <Text style={styles.notificationText}>{unreadNotifications}</Text>
+                <Text style={styles.notificationText}>
+                  {unreadNotifications}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -129,7 +156,7 @@ export default function GuestScreen() {
               }}
             >
               <UrlTile
-                urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                urlTemplate="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
                 maximumZ={19}
               />
               {churches.map((ch) => (
@@ -159,7 +186,10 @@ const styles = StyleSheet.create({
   headerTitle: { color: "#fff", fontSize: 18, fontWeight: "600" },
   quotes: { padding: 10 },
   quoteCard: {
-    backgroundColor: "#2e2e2e",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderWidth: 2,
+    borderColor: "#67A1BA",
+    borderStyle: "solid",
     borderRadius: 10,
     padding: 10,
     marginRight: 10,
@@ -186,26 +216,30 @@ const styles = StyleSheet.create({
   },
   mapCard: {
     margin: 10,
-    backgroundColor: "#2e2e2e",
     borderRadius: 12,
     padding: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   mapTitle: { color: "#fff", marginBottom: 6 },
-  map: { width: "100%", height: 200, borderRadius: 10 },
+  map: {
+    width: "100%",
+    height: 200,
+    borderRadius: 10,
+  },
   notificationBadge: {
-    position: 'absolute',
+    position: "absolute",
     right: -6,
     top: -3,
-    backgroundColor: 'red',
+    backgroundColor: "red",
     borderRadius: 8,
     width: 16,
     height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   notificationText: {
-    color: 'white',
+    color: "white",
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

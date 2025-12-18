@@ -40,7 +40,8 @@ export default function PriestQuestionListScreen() {
           token
         );
         if (Array.isArray(fetchedQuestions)) {
-          setQuestions(fetchedQuestions);
+          const sortedQuestions = fetchedQuestions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setQuestions(sortedQuestions);
         }
       }
     } catch (error) {
